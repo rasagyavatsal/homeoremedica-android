@@ -1,6 +1,6 @@
 # Changelog
 
-## [3.4.0](https://github.com/rasagyavatsal/HomeoRemedica/compare/android-v3.3.0...android-v3.4.0) (2026-11-13)
+## [3.4.0](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.3.0...v3.4.0) (2026-11-13)
 
 
 ### Features
@@ -26,7 +26,7 @@
 * **android:** keep a half-typed symptom or disease when the phone rotates ([3985a3b](https://github.com/rasagyavatsal/HomeoRemedica/commit/3985a3bc702f94c04c18243475b52e8c63a233fc))
 * **android:** keep the welcome glow inside its bounds on phones ([144ad1d](https://github.com/rasagyavatsal/HomeoRemedica/commit/144ad1db995899511af618f25c547fcd9d7bd110))
 
-## [3.3.0](https://github.com/rasagyavatsal/HomeoRemedica/compare/android-v3.2.1...android-v3.3.0) (2026-11-06)
+## [3.3.0](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.2.1...v3.3.0) (2026-11-06)
 
 
 ### Features
@@ -48,14 +48,14 @@
 
 * **android:** always say the account was deleted ([6b59b25](https://github.com/rasagyavatsal/HomeoRemedica/commit/6b59b258b1e42486cfe5a0d7bb225686d87a30b8))
 
-## [3.2.1](https://github.com/rasagyavatsal/HomeoRemedica/compare/android-v3.2.0...android-v3.2.1) (2026-11-06)
+## [3.2.1](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.2.0...v3.2.1) (2026-11-06)
 
 
 ### Bug Fixes
 
 * **android:** keep the notice toast above the composer ([676c99d](https://github.com/rasagyavatsal/HomeoRemedica/commit/676c99d06d01200c0a97e671d9d2318fd9cdb943))
 
-## [3.2.0](https://github.com/rasagyavatsal/HomeoRemedica-android/compare/v3.1.0...v3.2.0) (2026-11-04)
+## [3.2.0](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.1.0...v3.2.0) (2026-11-04)
 
 
 ### Features
@@ -72,7 +72,7 @@
 * switch between the system, light and dark themes ([31ef6e4](https://github.com/rasagyavatsal/HomeoRemedica-android/commit/31ef6e43c6a9fe9591823f940dc588ace1be1d46))
 * sync chats through the account once its email is verified ([d3c94f4](https://github.com/rasagyavatsal/HomeoRemedica-android/commit/d3c94f4e451421e2ddc2e5f5c2309900177980f8))
 
-## [3.1.0](https://github.com/rasagyavatsal/HomeoRemedica-android/compare/v3.0.0...v3.1.0) (2026-11-04)
+## [3.1.0](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.0.0...v3.1.0) (2026-11-04)
 
 
 ### Features
