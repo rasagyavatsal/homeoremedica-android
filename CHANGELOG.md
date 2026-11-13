@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.5.0](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.4.0...v3.5.0) (2026-11-13)
+
+
+### Features
+
+* delete chats from a long-press menu with a soft green undo notice ([a72ded1](https://github.com/rasagyavatsal/homeoremedica-android/commit/a72ded1e484f2efae04f593a35c1d1096c3d81de))
+* open a small menu instead of a sheet to delete a chat ([c110f95](https://github.com/rasagyavatsal/homeoremedica-android/commit/c110f95f42a0196ccab95d2ef8f20c731cc6722e))
+* show phone notices as a soft green snackbar ([9c112a4](https://github.com/rasagyavatsal/homeoremedica-android/commit/9c112a4c9f448828d6c02ca28821e5841cb3db76))
+
+
+### Bug Fixes
+
+* give each chat deletion's notice its full eight seconds ([54d20a7](https://github.com/rasagyavatsal/homeoremedica-android/commit/54d20a7b07c6f7ee7ccd56e411f62c5a8720419a))
+* keep the phone's case review sheet open while typing ([60b2e44](https://github.com/rasagyavatsal/homeoremedica-android/commit/60b2e44a0b6bfed59f893f6dfcbb2a89247e95f0)), closes [#11](https://github.com/rasagyavatsal/homeoremedica-android/issues/11)
+* raise source passage text to 15sp ([1c8b260](https://github.com/rasagyavatsal/homeoremedica-android/commit/1c8b2609a4b29adccf9c58fcb75d30d662e36fdc)), closes [#13](https://github.com/rasagyavatsal/homeoremedica-android/issues/13)
+
 ## [3.4.0](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.3.0...v3.4.0) (2026-11-13)
 
 
