@@ -104,7 +104,7 @@ run: install
 local: connect
 	$(GRADLE) installDebug -Phomeoremedica.apiBaseUrl=http://10.0.2.2:$(API_PORT)
 	$(ADB) shell am start -W -n $(LAUNCH) >/dev/null
-	@echo "The app now uses http://10.0.2.2:$(API_PORT); start the server with npm start in the repository root."
+	@echo "The app now uses http://10.0.2.2:$(API_PORT); start the server with npm start in ../homeoremedica-app."
 
 restart:
 ifneq ($(strip $(EMULATOR_HOST)),)
