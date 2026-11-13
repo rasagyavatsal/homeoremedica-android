@@ -1,6 +1,6 @@
 # HomeoRemedica for Android
 
-A native Android client for [HomeoRemedica](https://github.com/rasagyavatsal/HomeoRemedica), the
+A native Android client for [HomeoRemedica](https://github.com/rasagyavatsal/homeoremedica-app), the
 retrieval-augmented chat over historical homoeopathic materia medica. It asks the same questions of the
 same seven books and shows the same cited answers as the web app. Historical reference only; not medical
 advice.
@@ -64,7 +64,7 @@ Requirements: JDK 17+ and the Android SDK (compileSdk 37); the Gradle wrapper fe
 
 The debug APK is in `app/build/outputs/apk/debug/`. Builds talk to the production server at
 <https://homeoremedica-619837289655.asia-south1.run.app>. To use a local server from the emulator, start
-the web app with `npm start` in [homeoremedica-app](https://github.com/rasagyavatsal/HomeoRemedica) and pass
+the web app with `npm start` in [homeoremedica-app](https://github.com/rasagyavatsal/homeoremedica-app) and pass
 its address:
 
 ```sh
