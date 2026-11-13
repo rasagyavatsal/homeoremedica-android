@@ -346,7 +346,7 @@ class ChatViewModelTest {
         val pulsatilla = vm.state.value.id
 
         vm.deleteChat(pulsatilla)
-        assertEquals("Deleted “Pulsatilla?”.", vm.state.value.notice)
+        assertEquals("Chat deleted", vm.state.value.notice)
         assertTrue(vm.state.value.restorable)
         assertTrue(vm.state.value.messages.isEmpty())
         assertTrue(library.chats.value.isEmpty())
@@ -358,6 +358,20 @@ class ChatViewModelTest {
         // It was open, so it opens again.
         assertEquals(pulsatilla, vm.state.value.id)
         assertEquals(listOf("Pulsatilla?", "Mild."), vm.state.value.messages.map { it.content })
+    }
+
+    @Test
+    fun eachDeletionGetsItsOwnNotice() = runTest {
+        val vm = viewModel()
+        vm.ask("Pulsatilla?", "Mild.")
+        vm.deleteChat(vm.state.value.id)
+        val first = vm.state.value.deletions
+        vm.ask("Sepia?", "Indifferent.")
+        vm.deleteChat(vm.state.value.id)
+
+        // The same words, but a new notice, which shows for its full time.
+        assertEquals("Chat deleted", vm.state.value.notice)
+        assertEquals(first + 1, vm.state.value.deletions)
     }
 
     @Test

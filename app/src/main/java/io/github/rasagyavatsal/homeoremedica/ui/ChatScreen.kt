@@ -203,6 +203,9 @@ fun ChatScreen(
     } else {
         null
     }
+    // The case under review, kept here rather than in the conversation's list: see [CaseDraft].
+    val reviewing = state.messages.lastOrNull()?.takeIf { it.role == Role.Assistant && it.status == MessageStatus.Review }
+    val case = reviewing?.let { rememberCaseDraft(it.id, it.symptoms.orEmpty(), it.diseases) }
     var sidebarOpen by rememberSaveable { mutableStateOf(false) }
     val closeSidebar = { sidebarOpen = false }
     val drawerShown = remember { Animatable(if (sidebarOpen) 1f else 0f) }
@@ -281,7 +284,7 @@ fun ChatScreen(
                         if (state.messages.isEmpty()) {
                             Welcome(composerSpace, onExample = { submit(it) })
                         } else {
-                            key(state.id) { Conversation(state, wide, composerSpace, open, showSource, onRetry, onConfirm, onRate, onNote) }
+                            key(state.id) { Conversation(state, wide, composerSpace, open, showSource, case, onRetry, onConfirm, onRate, onNote) }
                         }
                         ComposerArea(
                             state = state,
@@ -334,6 +337,7 @@ fun ChatScreen(
                 )
             }
         }
+        if (case != null && compact) CaseSheet(case, onConfirm)
         // The chat list slides in over the chat on phones, following a finger that drags it.
         if (drawer && (sidebarOpen || drawerShown.value > 0f)) {
             Box(
@@ -371,6 +375,7 @@ fun ChatScreen(
                     .then(if (compact) Modifier.widthIn(max = 640.dp).fillMaxWidth() else Modifier),
                 action = if (state.restorable) "Undo" else null,
                 onAction = onUndoDelete,
+                key = state.deletions,
             )
         }
     }
@@ -425,6 +430,7 @@ private fun Conversation(
     bottomPadding: Dp,
     openSource: OpenSource?,
     onSource: (messageId: Long, number: Int) -> Unit,
+    case: CaseDraft?,
     onRetry: () -> Unit,
     onConfirm: (symptoms: List<String>, diseases: List<String>?) -> Unit,
     onRate: (messageId: Long, source: Int?, rating: Rating?) -> Unit,
@@ -461,6 +467,7 @@ private fun Conversation(
                         activeSource = openSource?.takeIf { it.messageId == message.id }?.number,
                         onSource = { number -> onSource(message.id, number) },
                         onRetry = onRetry.takeIf { index == state.messages.lastIndex },
+                        case = case.takeIf { index == state.messages.lastIndex },
                         onConfirm = onConfirm.takeIf { index == state.messages.lastIndex },
                         modifier = itemModifier.rise(message.id),
                         ratings = state.ratings[message.id],
@@ -504,6 +511,7 @@ private fun Reply(
     activeSource: Int?,
     onSource: (Int) -> Unit,
     onRetry: (() -> Unit)?,
+    case: CaseDraft?,
     onConfirm: ((symptoms: List<String>, diseases: List<String>?) -> Unit)?,
     modifier: Modifier,
     ratings: AnswerRatings?,
@@ -516,8 +524,7 @@ private fun Reply(
     val streaming = message.status == MessageStatus.Streaming
     when {
         message.status == MessageStatus.Error -> ReplyError(message.error.orEmpty(), onRetry, modifier)
-        message.status == MessageStatus.Review && onConfirm != null ->
-            CaseReview(message.symptoms.orEmpty(), message.diseases, onConfirm, modifier)
+        message.status == MessageStatus.Review && case != null && onConfirm != null -> CaseReview(case, onConfirm, modifier)
         streaming && message.content.isEmpty() -> Progress(
             when {
                 message.sources != null -> "Reading the passages…"

@@ -12,6 +12,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
@@ -238,18 +240,65 @@ fun IconButton(
     }
 }
 
-/** The web app's `.toast`: a message that dismisses itself after eight seconds, with an [action] such as Undo. */
+/**
+ * The web app's `.toast`: a message that dismisses itself after eight seconds, with an [action] such as Undo.
+ * A new [key] starts the eight seconds again, for a notice that repeats the last one's words.
+ */
 @Composable
-fun Toast(message: String, onDismiss: () -> Unit, modifier: Modifier = Modifier, action: String? = null, onAction: () -> Unit = {}) {
+fun Toast(
+    message: String,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    action: String? = null,
+    onAction: () -> Unit = {},
+    key: Any? = null,
+) {
     val colors = Theme.colors
-    LaunchedEffect(message) {
+    LaunchedEffect(message, key) {
         delay(8_000)
         onDismiss()
     }
     val shape = RoundedCornerShape(10.dp)
+    if (LocalCompact.current) {
+        // On phones, a soft green snackbar across the width, its action as green text at the end.
+        Row(
+            modifier
+                .rise(message to key, 200)
+                .shadowLarge(shape, colors.shadow)
+                .background(colors.accentSoft, shape)
+                .border(1.dp, colors.accentBorder, shape)
+                .heightIn(min = 48.dp)
+                .padding(start = 16.dp, end = if (action != null) 4.dp else 16.dp)
+                .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Assertive },
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BasicText(
+                message,
+                style = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = 14.sp, lineHeight = 20.sp),
+                modifier = Modifier.weight(1f).padding(vertical = 12.dp),
+            )
+            if (action != null) {
+                val interactions = remember { MutableInteractionSource() }
+                val pressed by interactions.pressed()
+                BasicText(
+                    action,
+                    style = TextStyle(color = colors.accentText, fontFamily = Fonts.sans, fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (pressed) colors.accentSoftHover else Color.Transparent)
+                        .pressable(label = action, interactionSource = interactions, onClick = onAction)
+                        .heightIn(min = 48.dp)
+                        .wrapContentHeight()
+                        .padding(horizontal = 12.dp),
+                )
+            }
+        }
+        return
+    }
     Row(
         modifier
-            .rise(message, 200)
+            .rise(message to key, 200)
             .shadowLarge(shape, colors.shadow)
             .background(colors.surfaceRaised, shape)
             .border(1.dp, colors.borderStrong, shape)
