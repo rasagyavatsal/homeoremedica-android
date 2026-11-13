@@ -3,7 +3,6 @@ package io.github.rasagyavatsal.homeoremedica.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -54,6 +53,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
 import io.github.rasagyavatsal.homeoremedica.chat.ChatSummary
 import io.github.rasagyavatsal.homeoremedica.ui.theme.Fonts
 import io.github.rasagyavatsal.homeoremedica.ui.theme.Theme
@@ -297,8 +306,8 @@ private fun ChatItem(chat: ChatSummary, active: Boolean, onOpen: () -> Unit, onD
 }
 
 /**
- * A chat on phones: tapping opens it, and a long press offers to delete it, which the notice that follows
- * can undo. Swiping is left to the drawer, which a swipe closes.
+ * A chat on phones: tapping opens it, and a long press opens a small menu under it that offers to delete
+ * it, which the notice that follows can undo. Swiping is left to the drawer, which a swipe closes.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -308,54 +317,98 @@ private fun ChatRow(chat: ChatSummary, active: Boolean, onOpen: () -> Unit, onDe
     val interactions = remember { MutableInteractionSource() }
     val pressed by interactions.pressed()
     var actions by rememberSaveable { mutableStateOf(false) }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(Pill)
-            .background(
-                when {
-                    active -> colors.surfaceSelected
-                    pressed || actions -> colors.surfaceHover
-                    else -> Color.Transparent
-                },
+    // The menu opens from this box, which is the row's size.
+    Box {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(Pill)
+                .background(
+                    when {
+                        active -> colors.surfaceSelected
+                        pressed || actions -> colors.surfaceHover
+                        else -> Color.Transparent
+                    },
+                )
+                .combinedClickable(
+                    interactionSource = interactions,
+                    indication = null,
+                    onClickLabel = "Open chat",
+                    onLongClickLabel = "Show actions",
+                    onLongClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        actions = true
+                    },
+                    onClick = onOpen,
+                )
+                .semantics {
+                    selected = active
+                    customActions = listOf(CustomAccessibilityAction("Delete") { onDelete(); true })
+                }
+                .heightIn(min = 52.dp)
+                .padding(horizontal = RowInset),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BasicText(
+                chat.title,
+                style = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = 16.sp, lineHeight = 22.sp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
             )
-            .combinedClickable(
-                interactionSource = interactions,
-                indication = null,
-                onClickLabel = "Open chat",
-                onLongClickLabel = "Show actions",
-                onLongClick = {
-                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                    actions = true
-                },
-                onClick = onOpen,
-            )
-            .semantics {
-                selected = active
-                customActions = listOf(CustomAccessibilityAction("Delete") { onDelete(); true })
-            }
-            .heightIn(min = 52.dp)
-            .padding(horizontal = RowInset),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        BasicText(
-            chat.title,
-            style = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = 16.sp, lineHeight = 22.sp),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        BasicText(chatTime(chat.updatedAt), style = TextStyle(color = colors.textSubtle, fontFamily = Fonts.sans, fontSize = 13.sp))
-    }
-    if (actions) {
-        BottomSheet("Chat actions", { actions = false }, title = chat.title) {
-            SheetItem(Icons.Trash, "Delete chat", danger = true) {
-                dismiss()
-                onDelete()
-            }
-            Spacer(Modifier.height(8.dp))
+            BasicText(chatTime(chat.updatedAt), style = TextStyle(color = colors.textSubtle, fontFamily = Fonts.sans, fontSize = 13.sp))
         }
+        if (actions) {
+            val gap = with(LocalDensity.current) { 4.dp.roundToPx() }
+            Popup(
+                popupPositionProvider = remember(gap) { BelowAnchor(gap) },
+                onDismissRequest = { actions = false },
+                properties = PopupProperties(focusable = true),
+            ) {
+                val shape = RoundedCornerShape(12.dp)
+                val itemInteractions = remember { MutableInteractionSource() }
+                val itemPressed by itemInteractions.pressed()
+                Column(
+                    Modifier
+                        .width(220.dp)
+                        .rise(Unit, 120)
+                        .shadowMedium(shape, colors.shadow)
+                        .background(colors.surfaceRaised, shape)
+                        .border(1.dp, colors.border, shape)
+                        .padding(4.dp)
+                        .semantics { contentDescription = "Chat actions" },
+                ) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (itemPressed) colors.dangerSoft else Color.Transparent)
+                            .pressable(role = Role.Button, label = "Delete chat", interactionSource = itemInteractions) {
+                                actions = false
+                                onDelete()
+                            }
+                            .heightIn(min = 48.dp)
+                            .padding(horizontal = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Trash, colors.danger, 18.dp)
+                        BasicText("Delete chat", style = TextStyle(color = colors.danger, fontFamily = Fonts.sans, fontSize = 15.sp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Opens a chat's menu just under it, lined up with its start, or just above it when there is no room below. */
+private class BelowAnchor(private val gap: Int) : PopupPositionProvider {
+    override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {
+        val below = anchorBounds.bottom + gap
+        val y = if (below + popupContentSize.height <= windowSize.height) below else maxOf(0, anchorBounds.top - popupContentSize.height - gap)
+        val x = if (layoutDirection == LayoutDirection.Ltr) anchorBounds.left else anchorBounds.right - popupContentSize.width
+        return IntOffset(x.coerceIn(0, maxOf(0, windowSize.width - popupContentSize.width)), y)
     }
 }
 

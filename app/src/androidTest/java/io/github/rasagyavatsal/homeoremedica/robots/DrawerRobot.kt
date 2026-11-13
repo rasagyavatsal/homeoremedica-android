@@ -47,7 +47,7 @@ class DrawerRobot(rule: ComposeTestRule) : Robot(rule) {
     fun openChat(title: String) = tap(chat(title))
 
     /**
-     * Delete the chat titled [title]: from its long-press sheet on phones, and with its delete button and
+     * Delete the chat titled [title]: from its long-press menu on phones, and with its delete button and
      * the confirmation that follows on wide screens.
      */
     fun delete(title: String) {
