@@ -4,12 +4,21 @@
 # on this machine unless they are already running, and stops what it started when the tests end. The device
 # reaches them through `adb reverse`, so a remote emulator works too.
 #
+# The e2e server and the emulators' config come from a checkout of homeoremedica-app, beside this repository
+# unless APP_DIR names another path.
+#
 # Arguments go to Gradle, for example a single class:
 #     ./e2e.sh -Pandroid.testInstrumentationRunnerArguments.class=io.github.rasagyavatsal.homeoremedica.ChatTest
 set -eu
 cd "$(dirname "$0")"
 logs=build/e2e
 mkdir -p "$logs"
+
+app=${APP_DIR:-../homeoremedica-app}
+if [ ! -f "$app/e2e/server.ts" ]; then
+  echo "No homeoremedica-app checkout at $app; clone it there or set APP_DIR." >&2
+  exit 1
+fi
 
 # Each job gets its own process group, so stopping it stops the processes it started too.
 set -m
@@ -35,7 +44,7 @@ await() {
 if ! up http://127.0.0.1:9099/; then
   echo "Starting the Firebase emulators"
   # The Firestore emulator needs Java.
-  (cd .. && exec npx --yes firebase-tools@15.32.1 emulators:start --config e2e/firebase.json \
+  (cd "$app" && exec npx --yes firebase-tools@15.32.1 emulators:start --config e2e/firebase.json \
     --project demo-homeoremedica --only auth,firestore) >"$logs/emulators.log" 2>&1 &
   jobs="$jobs $!"
   await http://127.0.0.1:9099/ "The Firebase Auth emulator"
@@ -44,7 +53,7 @@ fi
 
 if ! up http://127.0.0.1:8100/api/health; then
   echo "Starting the e2e server"
-  (cd .. && npx vite build && exec node e2e/server.ts) >"$logs/server.log" 2>&1 &
+  (cd "$app" && npx vite build && exec node e2e/server.ts) >"$logs/server.log" 2>&1 &
   jobs="$jobs $!"
   await http://127.0.0.1:8100/api/health "The e2e server"
 fi
