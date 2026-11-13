@@ -61,7 +61,7 @@ class LibraryTest {
         app.chat { askAndWait("restless legs") }
         app.drawer { delete("restless legs") }
         app.chat {
-            seesNotice("Deleted “restless legs”.")
+            seesNotice("Chat deleted")
             undo()
             seesQuestion("restless legs")
         }

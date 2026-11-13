@@ -346,7 +346,7 @@ class ChatViewModelTest {
         val pulsatilla = vm.state.value.id
 
         vm.deleteChat(pulsatilla)
-        assertEquals("Deleted “Pulsatilla?”.", vm.state.value.notice)
+        assertEquals("Chat deleted", vm.state.value.notice)
         assertTrue(vm.state.value.restorable)
         assertTrue(vm.state.value.messages.isEmpty())
         assertTrue(library.chats.value.isEmpty())

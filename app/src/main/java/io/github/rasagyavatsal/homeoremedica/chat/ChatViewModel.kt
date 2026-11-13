@@ -414,7 +414,7 @@ class ChatViewModel(
         _state.update { state ->
             state.copy(
                 chats = state.chats?.filter { it.id != id },
-                notice = if (chat != null) "Deleted “${chat.title}”." else state.notice,
+                notice = if (chat != null) "Chat deleted" else state.notice,
                 restorable = chat != null || state.restorable,
             )
         }
