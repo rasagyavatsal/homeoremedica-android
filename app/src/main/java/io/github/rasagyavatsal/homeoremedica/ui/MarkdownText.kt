@@ -77,7 +77,7 @@ fun MarkdownText(
 @Composable
 fun PassageText(blocks: List<Block>, modifier: Modifier = Modifier) {
     val colors = Theme.colors
-    val body = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = 13.sp, lineHeight = 1.65.em)
+    val body = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = 15.sp, lineHeight = 1.65.em)
     Column(modifier) {
         Blocks(blocks, body, colors, onCitation = {}, label = { "" }, passage = true)
     }
