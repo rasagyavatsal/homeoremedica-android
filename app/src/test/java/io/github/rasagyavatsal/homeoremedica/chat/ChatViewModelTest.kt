@@ -361,6 +361,20 @@ class ChatViewModelTest {
     }
 
     @Test
+    fun eachDeletionGetsItsOwnNotice() = runTest {
+        val vm = viewModel()
+        vm.ask("Pulsatilla?", "Mild.")
+        vm.deleteChat(vm.state.value.id)
+        val first = vm.state.value.deletions
+        vm.ask("Sepia?", "Indifferent.")
+        vm.deleteChat(vm.state.value.id)
+
+        // The same words, but a new notice, which shows for its full time.
+        assertEquals("Chat deleted", vm.state.value.notice)
+        assertEquals(first + 1, vm.state.value.deletions)
+    }
+
+    @Test
     fun cannotUndoADeletionOnceItsNoticeIsDismissed() = runTest {
         val vm = viewModel()
         vm.ask("Pulsatilla?", "Mild.")

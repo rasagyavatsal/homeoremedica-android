@@ -57,6 +57,8 @@ data class ChatState(
     val notice: String? = null,
     /** Whether [notice] is about a chat just deleted, which [ChatViewModel.undoDelete] puts back. */
     val restorable: Boolean = false,
+    /** Counts deletions, so each one's notice shows for its full time though the words are the same. */
+    val deletions: Int = 0,
     /** The open chat's ratings, by message id. */
     val ratings: Map<Long, AnswerRatings> = emptyMap(),
     /** Whether answers can be rated, which needs a verified account. */
@@ -120,7 +122,7 @@ class ChatViewModel(
             ratingQueues.clear()
             loadedRatings.clear()
             deleted = null
-            _state.update { ChatState(newId(), draft = it.draft, notice = it.notice.takeUnless { _ -> it.restorable }) }
+            _state.update { ChatState(newId(), draft = it.draft, notice = it.notice.takeUnless { _ -> it.restorable }, deletions = it.deletions) }
         }
         this.library = library
         _state.update { it.copy(chats = null, canRate = library is RatingClient) }
@@ -368,7 +370,7 @@ class ChatViewModel(
         stop()
         lastChat.set(null)
         _state.update {
-            ChatState(newId(), draft = it.draft, chats = it.chats, notice = it.notice, restorable = it.restorable, canRate = it.canRate)
+            ChatState(newId(), draft = it.draft, chats = it.chats, notice = it.notice, restorable = it.restorable, deletions = it.deletions, canRate = it.canRate)
         }
     }
 
@@ -416,6 +418,7 @@ class ChatViewModel(
                 chats = state.chats?.filter { it.id != id },
                 notice = if (chat != null) "Chat deleted" else state.notice,
                 restorable = chat != null || state.restorable,
+                deletions = if (chat != null) state.deletions + 1 else state.deletions,
             )
         }
         if (open) newChat()
@@ -465,6 +468,7 @@ class ChatViewModel(
                 chats = it.chats,
                 notice = it.notice,
                 restorable = it.restorable,
+                deletions = it.deletions,
                 canRate = it.canRate,
             )
         }

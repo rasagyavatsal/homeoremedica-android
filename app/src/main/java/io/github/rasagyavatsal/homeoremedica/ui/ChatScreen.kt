@@ -375,6 +375,7 @@ fun ChatScreen(
                     .then(if (compact) Modifier.widthIn(max = 640.dp).fillMaxWidth() else Modifier),
                 action = if (state.restorable) "Undo" else null,
                 onAction = onUndoDelete,
+                key = state.deletions,
             )
         }
     }

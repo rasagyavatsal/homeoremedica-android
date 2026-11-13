@@ -240,11 +240,21 @@ fun IconButton(
     }
 }
 
-/** The web app's `.toast`: a message that dismisses itself after eight seconds, with an [action] such as Undo. */
+/**
+ * The web app's `.toast`: a message that dismisses itself after eight seconds, with an [action] such as Undo.
+ * A new [key] starts the eight seconds again, for a notice that repeats the last one's words.
+ */
 @Composable
-fun Toast(message: String, onDismiss: () -> Unit, modifier: Modifier = Modifier, action: String? = null, onAction: () -> Unit = {}) {
+fun Toast(
+    message: String,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    action: String? = null,
+    onAction: () -> Unit = {},
+    key: Any? = null,
+) {
     val colors = Theme.colors
-    LaunchedEffect(message) {
+    LaunchedEffect(message, key) {
         delay(8_000)
         onDismiss()
     }
@@ -253,7 +263,7 @@ fun Toast(message: String, onDismiss: () -> Unit, modifier: Modifier = Modifier,
         // On phones, a soft green snackbar across the width, its action as green text at the end.
         Row(
             modifier
-                .rise(message, 200)
+                .rise(message to key, 200)
                 .shadowLarge(shape, colors.shadow)
                 .background(colors.accentSoft, shape)
                 .border(1.dp, colors.accentBorder, shape)
@@ -288,7 +298,7 @@ fun Toast(message: String, onDismiss: () -> Unit, modifier: Modifier = Modifier,
     }
     Row(
         modifier
-            .rise(message, 200)
+            .rise(message to key, 200)
             .shadowLarge(shape, colors.shadow)
             .background(colors.surfaceRaised, shape)
             .border(1.dp, colors.borderStrong, shape)
