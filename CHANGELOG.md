@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.5.1](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.5.0...v3.5.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* keep the Google web client ID in release builds ([af09784](https://github.com/rasagyavatsal/homeoremedica-android/commit/af09784a300041f8024ebc8948c8743d74369d79))
+* keep the Google web client ID in release builds ([cafa03d](https://github.com/rasagyavatsal/homeoremedica-android/commit/cafa03d4ce68bcea90a81e9d08d4cdcdbec489ed))
+
 ## [3.5.0](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.4.0...v3.5.0) (2026-11-13)
 
 
