@@ -64,7 +64,8 @@ Requirements: JDK 17+ and the Android SDK (compileSdk 37); the Gradle wrapper fe
 
 The debug APK is in `app/build/outputs/apk/debug/`. Builds talk to the production server at
 <https://homeoremedica-619837289655.asia-south1.run.app>. To use a local server from the emulator, start
-the web app with `npm start` and pass its address:
+the web app with `npm start` in [homeoremedica-app](https://github.com/rasagyavatsal/HomeoRemedica) and pass
+its address:
 
 ```sh
 ./gradlew installDebug -Phomeoremedica.apiBaseUrl=http://10.0.2.2:8000
@@ -99,7 +100,8 @@ app's log, save a screenshot and run the unit tests.
 `make e2e` runs the tests in `app/src/androidTest` on the device adb sees, and `make e2e TEST=ChatTest`
 runs one class. They drive the app with Compose UI tests against the web app's e2e server (`e2e/server.ts`),
 which scripts the answers, and the Firebase Auth and Firestore emulators, which hold the accounts. `e2e.sh`
-starts them on this machine unless they are running, which needs Node, the web app's `npm install` and Java,
+starts them on this machine unless they are running, which needs a checkout of homeoremedica-app beside this
+repository (or its path, relative to this one, in `APP_DIR`) with its `npm install`, and Node and Java,
 and the device reaches them through `adb reverse`. The tests build the app with `-Phomeoremedica.e2e`, which
 points it at both and asks from an address of its own each launch, as the server limits questions per address.
 
@@ -143,7 +145,7 @@ Conventional Commits on `main`. It keeps the version in `version.txt`, which the
 ./gradlew publishListing               # store listing in app/src/main/play
 ```
 
-Each `android-v*` release runs `./gradlew test publishBundle` in the `Deploy` GitHub Actions workflow,
-which you can also run by hand with `android`. It reads the upload key from the repository secrets
+Each `v*` release runs `./gradlew test publishBundle` in the `Deploy` GitHub Actions workflow, which you
+can also run by hand. It reads the upload key from the repository secrets
 `ANDROID_KEYSTORE_BASE64` (the `.jks`, base64-encoded), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`
 and `ANDROID_KEY_PASSWORD`, and the service account's JSON key from `PLAY_SERVICE_ACCOUNT_JSON`.
