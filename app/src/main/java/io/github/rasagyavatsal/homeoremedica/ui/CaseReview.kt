@@ -61,11 +61,11 @@ private const val MAX_SYMPTOM_CHARS = 200
 private const val MAX_DISEASES = 15
 private const val MAX_DISEASE_CHARS = 200
 
-private data class Term(val key: Int, val text: String)
+internal data class Term(val key: Int, val text: String)
 
 /** A list's rows, with a key each so removing one keeps the others' text and focus. */
 @Stable
-private class TermRows(read: List<String>) {
+internal class TermRows(read: List<String>) {
     private var nextKey = 0
     val rows = mutableStateListOf<Term>().apply { read.forEach { add(Term(nextKey++, it)) } }
 
@@ -100,69 +100,103 @@ private class TermRows(read: List<String>) {
     /** The rows as the user left them, without the blank ones, then anything still being added. */
     fun texts() = (rows.map { it.text } + draft).map { it.trim() }.filter { it.isNotEmpty() }
 
+    /** The rows, then the [draft] last, so a term half typed survives rotation too. */
+    fun saved() = ArrayList(rows.map { it.text } + draft)
+
     companion object {
-        /** Keeps the rows while the review is scrolled out of view or the screen turns. */
-        /** Saves the rows, then the [draft] last, so a term half typed survives rotation too. */
-        val Saver = listSaver<TermRows, String>(
-            save = { terms -> terms.rows.map { it.text } + terms.draft },
-            restore = { saved -> TermRows(saved.dropLast(1)).also { it.draft = saved.lastOrNull().orEmpty() } },
-        )
+        fun restored(saved: List<String>) = TermRows(saved.dropLast(1)).also { it.draft = saved.lastOrNull().orEmpty() }
     }
 }
 
 /**
- * The symptoms and diseases a case will be searched by, for the user to correct before it is answered.
- * [diseases] is null when they could not be read, and they are then not reviewed. [onConfirm] receives
- * both as the user left them.
+ * A case under review: its symptoms and diseases as the user is leaving them, [diseases] null when they are
+ * not reviewed, and whether a phone's sheet is [open]. It is kept by the chat screen, above the conversation's
+ * list, which disposes a row scrolled out of view: the keyboard shrinking the list would otherwise take the
+ * sheet, and the field being typed in, with the row that opens it.
+ */
+@Stable
+class CaseDraft internal constructor(internal val symptoms: TermRows, internal val diseases: TermRows?, open: Boolean) {
+    var open by mutableStateOf(open)
+
+    companion object {
+        val Saver = listSaver<CaseDraft, Any?>(
+            save = { case -> listOf(case.open, case.symptoms.saved(), case.diseases?.saved()) },
+            restore = { saved ->
+                @Suppress("UNCHECKED_CAST")
+                CaseDraft(
+                    TermRows.restored(saved[1] as List<String>),
+                    (saved[2] as List<String>?)?.let(TermRows::restored),
+                    saved[0] as Boolean,
+                )
+            },
+        )
+    }
+}
+
+/** The review of the case read for answer [messageId], open from the start on phones. */
+@Composable
+fun rememberCaseDraft(messageId: Long, symptoms: List<String>, diseases: List<String>?): CaseDraft =
+    rememberSaveable(messageId, saver = CaseDraft.Saver) { CaseDraft(TermRows(symptoms), diseases?.let(::TermRows), open = true) }
+
+/** Answers the case by its rows as the user left them. */
+@Composable
+private fun confirmCase(case: CaseDraft, onConfirm: (symptoms: List<String>, diseases: List<String>?) -> Unit): () -> Unit {
+    val keyboard = LocalSoftwareKeyboardController.current
+    val haptics = LocalHapticFeedback.current
+    return {
+        keyboard?.hide()
+        haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+        onConfirm(case.symptoms.texts(), case.diseases?.texts())
+    }
+}
+
+/**
+ * The symptoms and diseases a case will be searched by, for the user to correct before it is answered. On
+ * phones this is the way back into the [CaseSheet] once it is closed. [onConfirm] receives both as the user
+ * left them.
  */
 @Composable
 fun CaseReview(
-    symptoms: List<String>,
-    diseases: List<String>?,
+    case: CaseDraft,
     onConfirm: (symptoms: List<String>, diseases: List<String>?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val symptomRows = rememberSaveable(saver = TermRows.Saver) { TermRows(symptoms) }
-    val diseaseRows = rememberSaveable(saver = TermRows.Saver) { TermRows(diseases.orEmpty()) }
-    val keyboard = LocalSoftwareKeyboardController.current
-    val haptics = LocalHapticFeedback.current
-    val confirm = {
-        keyboard?.hide()
-        haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
-        onConfirm(symptomRows.texts(), diseases?.let { diseaseRows.texts() })
-    }
     if (LocalCompact.current) {
-        // A sheet over the chat, open from the start; closing it leaves a way back in the conversation.
-        var open by rememberSaveable { mutableStateOf(true) }
-        Box(modifier) { Button("Review case", ButtonStyle.Outline, { open = true }) }
-        if (open) {
-            BottomSheet("Case", { open = false }) {
-                Column(
-                    Modifier
-                        .weight(1f, fill = false)
-                        .verticalScroll(rememberScrollState())
-                        .semantics { contentDescription = "Case" }
-                        .padding(bottom = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                ) {
-                    SheetTerms("Symptoms", "symptom", symptomRows, MAX_SYMPTOMS, MAX_SYMPTOM_CHARS)
-                    if (diseases != null) SheetTerms("Diseases", "disease", diseaseRows, MAX_DISEASES, MAX_DISEASE_CHARS)
-                }
-                Button(
-                    "Continue",
-                    ButtonStyle.Primary,
-                    confirm,
-                    Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 16.dp),
-                    minHeight = 52.dp,
-                )
-            }
-        }
+        Box(modifier) { Button("Review case", ButtonStyle.Outline, { case.open = true }) }
         return
     }
+    val confirm = confirmCase(case, onConfirm)
     val proceed = @Composable { Button("Continue", ButtonStyle.Primary, confirm) }
     Column(modifier.semantics { contentDescription = "Case" }, verticalArrangement = Arrangement.spacedBy(24.dp)) {
-        TermList("Symptoms", "symptom", symptomRows, MAX_SYMPTOMS, MAX_SYMPTOM_CHARS) { if (diseases == null) proceed() }
-        if (diseases != null) TermList("Diseases", "disease", diseaseRows, MAX_DISEASES, MAX_DISEASE_CHARS) { proceed() }
+        TermList("Symptoms", "symptom", case.symptoms, MAX_SYMPTOMS, MAX_SYMPTOM_CHARS) { if (case.diseases == null) proceed() }
+        case.diseases?.let { TermList("Diseases", "disease", it, MAX_DISEASES, MAX_DISEASE_CHARS) { proceed() } }
+    }
+}
+
+/** A phone's case review: a sheet over the chat, while the [case] is open. */
+@Composable
+fun CaseSheet(case: CaseDraft, onConfirm: (symptoms: List<String>, diseases: List<String>?) -> Unit) {
+    if (!case.open) return
+    val confirm = confirmCase(case, onConfirm)
+    BottomSheet("Case", { case.open = false }) {
+        Column(
+            Modifier
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
+                .semantics { contentDescription = "Case" }
+                .padding(bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            SheetTerms("Symptoms", "symptom", case.symptoms, MAX_SYMPTOMS, MAX_SYMPTOM_CHARS)
+            case.diseases?.let { SheetTerms("Diseases", "disease", it, MAX_DISEASES, MAX_DISEASE_CHARS) }
+        }
+        Button(
+            "Continue",
+            ButtonStyle.Primary,
+            confirm,
+            Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 16.dp),
+            minHeight = 52.dp,
+        )
     }
 }
 
