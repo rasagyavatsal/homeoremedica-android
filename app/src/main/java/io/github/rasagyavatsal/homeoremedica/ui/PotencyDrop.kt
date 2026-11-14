@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.rasagyavatsal.homeoremedica.ui.theme.Theme
 import kotlin.math.PI
+import kotlin.math.exp
 import kotlin.math.pow
 import kotlin.math.sin
 
@@ -47,7 +49,9 @@ private val DropPath: Path = PathParser()
     .toPath()
 
 private const val FILL_MILLIS = 5200
-private const val SWEEP_MILLIS = 2800
+private const val TAP_MILLIS = 3200
+private const val TAPS = 4
+private const val TAP_SECONDS = 0.22f
 
 private fun clamp(t: Float) = t.coerceIn(0f, 1f)
 private fun easeOut(t: Float) = 1 - (1 - clamp(t)).pow(3)
@@ -128,23 +132,37 @@ fun FillingDrop(size: Dp, modifier: Modifier = Modifier) {
     }
 }
 
-/** The drop with its ring drawn round and round, for waiting on an answer. */
+/** The drop struck four times, as a remedy is succussed, then settling: for waiting on an answer. */
 @Composable
-fun SweepingDrop(size: Dp, modifier: Modifier = Modifier) {
+fun TappingDrop(size: Dp, modifier: Modifier = Modifier) {
     val color = Theme.colors.accent
-    val time = loopSeconds(SWEEP_MILLIS, "sweeping drop")
-    Canvas(modifier.size(size).graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }) {
-        val p = time?.invoke()?.div(SWEEP_MILLIS / 1000f)
+    val time = loopSeconds(TAP_MILLIS, "tapping drop")
+    Canvas(
+        modifier.size(size).graphicsLayer {
+            compositingStrategy = CompositingStrategy.Offscreen
+            val t = time?.invoke() ?: return@graphicsLayer
+            // Rocks on the bottom of the drop.
+            transformOrigin = TransformOrigin(0.5f, 0.95f)
+            if (t < TAPS * TAP_SECONDS) {
+                val p = (t % TAP_SECONDS) / TAP_SECONDS
+                val lift = sin(PI.toFloat() * p)
+                translationY = -0.09f * this.size.height * lift
+                rotationZ = -6f * lift
+                // Squashed as it lands and leaves.
+                val landed = p < 0.12f || p > 0.88f
+                scaleY = if (landed) 0.9f else 1f
+                scaleX = if (landed) 1.08f else 1f
+            } else {
+                val s = t - TAPS * TAP_SECONDS
+                scaleY = 1 - 0.06f * exp(-4 * s) * sin(16 * s)
+                scaleX = 2 - scaleY
+            }
+        },
+    ) {
         inDropBox {
             drawPath(DropPath, color)
+            cutRing(color, 0f, 360f)
             drawCircle(color, DOT_RADIUS, Centre, blendMode = BlendMode.Clear)
-            if (p == null) {
-                cutRing(color, -90f, 360f)
-            } else {
-                // The cut ring grows and shrinks as it travels round.
-                val sweep = 360f * (0.15f + 0.7f * sin(PI.toFloat() * p))
-                cutRing(color, -90f + 360f * p + 540f * easeInOut(p), sweep)
-            }
         }
     }
 }
