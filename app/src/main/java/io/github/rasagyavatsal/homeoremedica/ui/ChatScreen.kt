@@ -594,27 +594,12 @@ private fun Reply(
 @Composable
 private fun Progress(label: String, modifier: Modifier) {
     val colors = Theme.colors
-    val beat by rememberInfiniteTransition("progress").animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(600, easing = Ease), RepeatMode.Reverse),
-        label = "progress pulse",
-    )
     Row(
         modifier.semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier
-                .size(8.dp)
-                .graphicsLayer {
-                    alpha = 1 - 0.75f * beat
-                    scaleX = 1 - 0.3f * beat
-                    scaleY = scaleX
-                }
-                .background(colors.accent, Pill),
-        )
+        SweepingDrop(20.dp)
         BasicText(label, style = TextStyle(color = colors.textMuted, fontFamily = Fonts.sans, fontSize = 13.sp))
     }
 }
