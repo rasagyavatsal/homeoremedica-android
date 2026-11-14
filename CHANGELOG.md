@@ -1,5 +1,27 @@
 # Changelog
 
+## [3.6.0](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.5.1...v3.6.0) (2026-11-14)
+
+
+### Features
+
+* animate the drop logo and tidy the chat screens ([1e98ddb](https://github.com/rasagyavatsal/homeoremedica-android/commit/1e98ddbd488f416c4d77213a8d9924fb0360105c))
+* change the hero text to 'AI for homeopathy' ([2609260](https://github.com/rasagyavatsal/homeoremedica-android/commit/260926012064c00bdcb68629fb7a169e643df2ec))
+* drop the legal pages' footer links and give tablets the back arrow bar ([58e8c05](https://github.com/rasagyavatsal/homeoremedica-android/commit/58e8c055284d892945225aa73f2a7abf74249034))
+* fill the empty phone screens with the drop filling up ([fc5d351](https://github.com/rasagyavatsal/homeoremedica-android/commit/fc5d35183a8e29cb02b902dd1ff196bdab93ef1f))
+* fold long questions to eight lines ([cbf98fe](https://github.com/rasagyavatsal/homeoremedica-android/commit/cbf98fe553343afc4803ba74b7fdaba097294f8f))
+* show references as one row that opens their passages ([c502e04](https://github.com/rasagyavatsal/homeoremedica-android/commit/c502e04d988ec12814affd24e2558580f617a2f8))
+* show the drop with its ring sweeping round while an answer loads ([88d82b0](https://github.com/rasagyavatsal/homeoremedica-android/commit/88d82b02a425c2cf587d1f2d435e7b34d7b0c5c4))
+* tap the drop four times, as in succussion, while an answer loads ([4d9d4e7](https://github.com/rasagyavatsal/homeoremedica-android/commit/4d9d4e7e8d7fa6ca7055d0c0ea8238a304c78ba5))
+
+
+### Bug Fixes
+
+* give the tablet panel's passage arrows a row of their own under the passage ([54ac9df](https://github.com/rasagyavatsal/homeoremedica-android/commit/54ac9dfbd50363488db65e6f2315fdcfe803520a))
+* keep an expanded question foldable after the screen is recreated ([a283885](https://github.com/rasagyavatsal/homeoremedica-android/commit/a2838854c142de19b0ad2df6f8e653962c76f194))
+* let tablets step through an answer's passages from the sources panel ([89f86c2](https://github.com/rasagyavatsal/homeoremedica-android/commit/89f86c29b855c98380bac33ad9fbab5f5c3d288f))
+* link citations followed by a colon and citation ranges ([675d675](https://github.com/rasagyavatsal/homeoremedica-android/commit/675d675e5f224e7dcaa336f9242528a04cf7da62))
+
 ## [3.5.1](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.5.0...v3.5.1) (2026-11-13)
 
 
