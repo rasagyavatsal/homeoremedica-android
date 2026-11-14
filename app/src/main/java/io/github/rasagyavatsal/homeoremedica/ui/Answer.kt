@@ -11,16 +11,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -44,13 +40,11 @@ import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import io.github.rasagyavatsal.homeoremedica.BuildConfig
@@ -140,114 +134,62 @@ private val ActionSize = 48.dp
 private val ActionIcon = 22.dp
 private val ActionInset = (ActionSize - ActionIcon) / 2
 
-// The web app's `--layout-reference-min` and the grid's gap.
-private val ReferenceMin = 192.dp
-private val ReferenceGap = 8.dp
-
 /** How far the conversation's items sit from the screen's sides, which a row that scrolls sideways reaches past. */
 val LocalGutter = compositionLocalOf { 16.dp }
 
 /**
- * The passages an answer cites, or every passage it retrieved if it cites none: a row that scrolls
- * sideways on phones, and a grid that fills the width on wide screens, as the web app's.
+ * One row under an answer that counts the passages it cites, or every passage it retrieved if it
+ * cites none, as the web app's; it opens the first of them, and the sheet swipes between the rest.
  */
 @Composable
 private fun References(sources: List<Citation>, cited: Set<Int>, active: Int?, onOpen: (Int) -> Unit) {
     val colors = Theme.colors
     val listed = referencedNumbers(sources.size, cited)
-    if (LocalCompact.current) {
-        // One filled card of full-width rows, so each book's title can be read.
-        val shape = RoundedCornerShape(16.dp)
-        Column(Modifier.padding(top = 12.dp).rise(sources, 320).fillMaxWidth().clip(shape).background(colors.surfaceHover)) {
-            listed.forEachIndexed { index, number ->
-                if (index > 0) Box(Modifier.padding(start = 46.dp).fillMaxWidth().height(1.dp).background(colors.border))
-                Reference(number, sources[number - 1], number == active, Modifier.fillMaxWidth(), plain = true) { onOpen(number) }
-            }
-        }
-        return
-    }
-    Column(Modifier.padding(top = 24.dp).rise(sources, 320)) {
-        BasicText(
-            "REFERENCES",
-            style = TextStyle(color = colors.textSubtle, fontFamily = Fonts.sans, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.06.em),
-            modifier = Modifier.padding(bottom = 8.dp),
-        )
-        // An auto-filling grid, as `repeat(auto-fill, minmax(12rem, 1fr))` lays it out.
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val columns = maxOf(1, ((maxWidth + ReferenceGap) / (ReferenceMin + ReferenceGap)).toInt())
-            Column(verticalArrangement = Arrangement.spacedBy(ReferenceGap)) {
-                for (row in listed.chunked(columns)) {
-                    Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(ReferenceGap)) {
-                        for (number in row) {
-                            Reference(number, sources[number - 1], number == active, Modifier.weight(1f).fillMaxHeight()) { onOpen(number) }
-                        }
-                        repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
-                    }
+    val first = listed.firstOrNull() ?: return
+    val interactions = remember { MutableInteractionSource() }
+    val pressed by interactions.pressed()
+    val highlighted = pressed || active in listed
+    val count = if (listed.size == 1) "1 reference" else "${listed.size} references"
+    Row(
+        Modifier
+            .padding(top = if (LocalCompact.current) 12.dp else 24.dp)
+            .rise(sources, 320)
+            .clip(Pill)
+            .background(if (highlighted) colors.accentSoft else colors.surface)
+            .border(1.dp, if (highlighted) colors.accentBorder else colors.border, Pill)
+            .pressable(label = "Open references", interactionSource = interactions) { onOpen(first) }
+            .semantics(mergeDescendants = true) { contentDescription = count }
+            .padding(start = 6.dp, end = 10.dp, top = 6.dp, bottom = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            for (number in listed.take(3)) {
+                Box(
+                    Modifier
+                        .defaultMinSize(minWidth = 20.dp)
+                        .height(20.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (highlighted) colors.accentSoftHover else colors.accentSoft)
+                        .padding(horizontal = 4.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    BasicText(
+                        number.toString(),
+                        style = TextStyle(
+                            color = colors.accentText,
+                            fontFamily = Fonts.sans,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center,
+                            fontFeatureSettings = "tnum",
+                        ),
+                    )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun Reference(
-    number: Int,
-    source: Citation,
-    active: Boolean,
-    modifier: Modifier,
-    /** A row of a phone's card, which has no outline of its own. */
-    plain: Boolean = false,
-    onClick: () -> Unit,
-) {
-    val colors = Theme.colors
-    val interactions = remember { MutableInteractionSource() }
-    val pressed by interactions.pressed()
-    val shape = RoundedCornerShape(if (plain) 0.dp else 10.dp)
-    val highlighted = active || pressed
-    Row(
-        modifier
-            .clip(shape)
-            .background(if (highlighted) colors.accentSoft else if (plain) Color.Transparent else colors.surface)
-            .border(1.dp, if (plain) Color.Transparent else if (highlighted) colors.accentBorder else colors.border, shape)
-            .pressable(label = if (active) "Close source" else "Open source", interactionSource = interactions, onClick = onClick)
-            .semantics(mergeDescendants = true) {
-                contentDescription = "Source $number: ${source.label}, ${source.bookTitle}"
-                selected = active
-            }
-            .padding(horizontal = if (plain) 16.dp else 12.dp, vertical = if (plain) 16.dp else 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(if (plain) 12.dp else 8.dp),
-    ) {
-        Box(
-            Modifier
-                .defaultMinSize(minWidth = 18.dp)
-                .height(18.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(if (active) colors.accent else colors.accentSoft)
-                .padding(horizontal = 4.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            BasicText(
-                number.toString(),
-                style = TextStyle(
-                    color = if (active) colors.textOnAccent else colors.accentText,
-                    fontFamily = Fonts.sans,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center,
-                    fontFeatureSettings = "tnum",
-                ),
-            )
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            BasicText(
-                source.label,
-                style = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = if (plain) 15.sp else 13.sp, fontWeight = FontWeight.SemiBold),
-            )
-            BasicText(
-                source.bookTitle,
-                style = TextStyle(color = colors.textMuted, fontFamily = Fonts.sans, fontSize = if (plain) 14.sp else 12.sp, lineHeight = 1.4.em),
-            )
-        }
+        BasicText(count, style = TextStyle(color = if (highlighted) colors.text else colors.textMuted, fontFamily = Fonts.sans, fontSize = 14.sp))
+        Icon(Icons.Chevron, colors.textMuted, 16.dp)
     }
 }
 

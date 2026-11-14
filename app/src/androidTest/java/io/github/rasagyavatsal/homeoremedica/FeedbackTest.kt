@@ -60,12 +60,12 @@ class FeedbackTest {
         val user = signedIn()
         app.chat {
             askAndSave(user, "aversion to company")
-            openSource(1).rate("Relevant")
+            openReferences().rate("Relevant")
         }
         eventually { assertEquals(mapOf(1 to Rating.Up), Server.ratings(user, "aversion to company")?.sources) }
 
         app.restart()
-        app.chat { openSource(1).isRated("Relevant") }
+        app.chat { openReferences().isRated("Relevant") }
     }
 
     /** Past the notice and signed in to a new, verified account, which can rate answers. */

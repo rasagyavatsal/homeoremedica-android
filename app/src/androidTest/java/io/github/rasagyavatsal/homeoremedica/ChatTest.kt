@@ -35,7 +35,7 @@ class ChatTest {
         app.chat {
             askAndWait("irritable and chilly")
             seesAnswer(ANSWER)
-            openSource(1).apply {
+            openReferences().apply {
                 showsPassage(NUX_VOMICA_PASSAGE)
                 close()
             }
