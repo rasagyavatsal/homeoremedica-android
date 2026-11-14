@@ -5,12 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -26,8 +23,6 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
@@ -219,11 +214,10 @@ private val Terms = listOf(
     p { mail(it) },
 )
 
-/** A legal page over the app; [onOpen] shows the other one and [onClose] returns to the app. */
+/** A legal page over the app; [onOpen] shows the other one from a link in its text and [onClose] returns to the app. */
 @Composable
 fun LegalPage(page: LegalPageName, onOpen: (LegalPageName) -> Unit, onClose: () -> Unit) {
     val colors = Theme.colors
-    val other = if (page == LegalPageName.Privacy) LegalPageName.Terms else LegalPageName.Privacy
     val links = Links(colors, onOpen)
     val scroll = key(page) { rememberScrollState() }
     LaunchedEffect(page) { scroll.scrollTo(0) }
@@ -231,39 +225,24 @@ fun LegalPage(page: LegalPageName, onOpen: (LegalPageName) -> Unit, onClose: () 
 
     val compact = LocalCompact.current
     Column(Modifier.fillMaxSize().background(colors.canvas)) {
-        if (compact) {
-            // A back arrow, as phones leave a page; the theme is chosen in the account sheet.
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .heightIn(min = 56.dp)
-                    .padding(horizontal = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(Icons.ArrowLeft, "Back to HomeoRemedica", onClose, size = 48.dp, iconSize = 22.dp, color = colors.text)
-                // The bar names the page, so the page does not repeat it.
-                BasicText(
-                    page.title,
-                    style = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = 18.sp, fontWeight = FontWeight.Medium),
-                    modifier = Modifier.semantics { heading() },
-                )
-            }
-        } else {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .drawBehind { drawLine(colors.border, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx()) }
-                    .statusBarsPadding()
-                    .heightIn(min = 44.dp)
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Brand(Modifier.pressable(label = "Back to HomeoRemedica", onClick = onClose))
-                ThemeToggle()
-            }
+        // A back arrow and the page's name; phones choose the theme in the account sheet, larger screens here.
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(Icons.ArrowLeft, "Back to HomeoRemedica", onClose, size = 48.dp, iconSize = 22.dp, color = colors.text)
+            // The bar names the page, so the page does not repeat it.
+            BasicText(
+                page.title,
+                style = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = 18.sp, fontWeight = FontWeight.Medium),
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            if (!compact) ThemeToggle()
         }
         Box(Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll), contentAlignment = Alignment.TopCenter) {
             Column(
@@ -275,18 +254,10 @@ fun LegalPage(page: LegalPageName, onOpen: (LegalPageName) -> Unit, onClose: () 
             ) {
                 val body = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = if (compact) 16.sp else 17.sp, lineHeight = if (compact) 1.55.em else 1.65.em)
                 SelectionContainer {
-                    Column(Modifier.padding(top = if (compact) 4.dp else 32.dp, bottom = 32.dp)) {
-                        if (!compact) {
-                            BasicText(
-                                page.title,
-                                style = body.copy(fontSize = 32.sp, lineHeight = 1.25.em),
-                                modifier = Modifier.semantics { heading() },
-                            )
-                        }
+                    Column(Modifier.padding(top = 4.dp, bottom = 48.dp)) {
                         BasicText(
                             "Effective $EFFECTIVE",
                             style = TextStyle(color = colors.textSubtle, fontFamily = Fonts.sans, fontSize = 13.sp),
-                            modifier = Modifier.padding(top = if (compact) 0.dp else 8.dp),
                         )
                         for (section in if (page == LegalPageName.Privacy) Privacy else Terms) {
                             when (section) {
@@ -311,15 +282,6 @@ fun LegalPage(page: LegalPageName, onOpen: (LegalPageName) -> Unit, onClose: () 
                             }
                         }
                     }
-                }
-                Spacer(Modifier.fillMaxWidth().height(1.dp).background(colors.border))
-                FlowRow(
-                    Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 48.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Button("Back to HomeoRemedica", ButtonStyle.Outline, onClose, icon = Icons.ArrowLeft)
-                    Button(other.title, ButtonStyle.Quiet, { onOpen(other) }, trailingIcon = Icons.ArrowRight, color = colors.textMuted)
                 }
             }
         }
