@@ -220,6 +220,7 @@ fun IconButton(
     color: Color? = null,
     pressedColor: Color? = null,
     raised: Boolean = false,
+    enabled: Boolean = true,
     content: (@Composable () -> Unit)? = null,
 ) {
     val colors = Theme.colors
@@ -231,12 +232,12 @@ fun IconButton(
             .size(size)
             .clip(RoundedCornerShape(10.dp))
             .background(if (!pressed) Color.Transparent else if (raised) colors.surfaceRaisedHover else colors.surfaceHover)
-            .pressable(label = label, interactionSource = interactions, onClick = onClick)
+            .pressable(enabled, label = label, interactionSource = interactions, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
         if (content != null) content()
-        else Icon(icon, if (pressed) pressedColor ?: colors.text else color ?: colors.textMuted, iconSize)
+        else Icon(icon, if (!enabled) colors.border else if (pressed) pressedColor ?: colors.text else color ?: colors.textMuted, iconSize)
     }
 }
 

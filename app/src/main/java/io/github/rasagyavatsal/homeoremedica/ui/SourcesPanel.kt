@@ -54,13 +54,23 @@ import io.github.rasagyavatsal.homeoremedica.ui.theme.Fonts
 import io.github.rasagyavatsal.homeoremedica.ui.theme.Theme
 
 /**
+ * The passages an answer's [count] sources page through, open at [number]: the [numbers] it lists, or every one
+ * when [number] is not among them, as from a chip in its text. Sources are numbered from 1.
+ */
+fun sourcePages(numbers: List<Int>, number: Int, count: Int): List<Int> =
+    if (number in numbers) numbers else (1..count).toList()
+
+/**
  * The passage behind one reference in an answer, beside the chat as the web app's sources panel
- * (src/web/SourcesPanel.tsx); [number] is its place in the answer, from 1. Phones show [SourceSheet] instead.
+ * (src/web/SourcesPanel.tsx); [number] is its place in the answer, from 1, and [onSelect] moves through
+ * [pages]. Phones show [SourceSheet] instead.
  */
 @Composable
 fun SourcesPanel(
     source: Citation,
     number: Int,
+    pages: List<Int>,
+    onSelect: (Int) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     rating: Rating? = null,
@@ -68,6 +78,7 @@ fun SourcesPanel(
     onRate: ((Rating?) -> Unit)? = null,
 ) {
     val colors = Theme.colors
+    val page = pages.indexOf(number)
     Column(modifier.background(colors.surface).statusBarsPadding()) {
         SourceHeader(source, number, rating, onRate, Modifier.rise(source.id, 200).padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp)) {
             CloseButton(onClose)
@@ -78,10 +89,34 @@ fun SourcesPanel(
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .navigationBarsPadding()
+                .then(if (pages.size > 1) Modifier else Modifier.navigationBarsPadding())
                 .rise(source.id, 200)
                 .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
         )
+        // A row of its own under the passage, so the header keeps its width for the source's name and book.
+        if (pages.size > 1) {
+            Spacer(Modifier.fillMaxWidth().height(1.dp).background(colors.border))
+            Row(
+                Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(
+                    Icons.ArrowLeft,
+                    "Previous source",
+                    { pages.getOrNull(page - 1)?.let(onSelect) },
+                    iconSize = 18.dp,
+                    enabled = page > 0,
+                )
+                Dots(pages.size, page, Modifier.weight(1f))
+                IconButton(
+                    Icons.ArrowRight,
+                    "Next source",
+                    { pages.getOrNull(page + 1)?.let(onSelect) },
+                    iconSize = 18.dp,
+                    enabled = page in 0 until pages.lastIndex,
+                )
+            }
+        }
     }
 }
 
@@ -102,7 +137,7 @@ fun SourceSheet(
 ) {
     val colors = Theme.colors
     // A number the answer does not list, from a chip in its text, pages through all of them instead.
-    val pages = remember(numbers, number) { if (number in numbers) numbers else sources.indices.map { it + 1 } }
+    val pages = remember(numbers, number) { sourcePages(numbers, number, sources.size) }
     val pager = rememberPagerState(pages.indexOf(number).coerceAtLeast(0)) { pages.size }
     val select by rememberUpdatedState(onSelect)
     val haptics = LocalHapticFeedback.current
@@ -142,10 +177,10 @@ fun SourceSheet(
 
 /** Which of [count] pages shows, as a row of dots. */
 @Composable
-private fun Dots(count: Int, current: Int) {
+private fun Dots(count: Int, current: Int, modifier: Modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
     val colors = Theme.colors
     Row(
-        Modifier.fillMaxWidth().padding(bottom = 8.dp),
+        modifier,
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {

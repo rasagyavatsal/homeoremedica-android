@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -60,13 +61,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
@@ -300,10 +305,16 @@ fun ChatScreen(
             }
             // Beside the chat on wide screens, as the web app's `.sources` column.
             if (source != null && open != null && !compact) {
+                val sources = sourceAnswer?.sources.orEmpty()
+                val listed = remember(sourceAnswer?.content, sources.size) {
+                    referencedNumbers(sources.size, citedNumbers(sourceAnswer?.content.orEmpty(), sources.size))
+                }
                 key(source.id) {
                     SourcesPanel(
                         source,
                         open.number,
+                        remember(listed, open.number) { sourcePages(listed, open.number, sources.size) },
+                        { number -> openSource = OpenSource(open.messageId, number) },
                         closeSource,
                         Modifier
                             .width(panelWidth)
@@ -481,28 +492,55 @@ private fun Conversation(
     }
 }
 
+/** Lines a question shows before it folds. */
+private const val FOLDED_LINES = 8
+
 @Composable
 private fun UserMessage(content: String, wide: Boolean, modifier: Modifier) {
     val colors = Theme.colors
     val compact = LocalCompact.current
     // A filled bubble with a tail on phones; the web app's outlined card on wide screens.
     val shape = if (compact) RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp) else RoundedCornerShape(16.dp)
+    // Long when the fold hides some of the question, measured while folded; a tap opens or closes it.
+    var long by remember(content) { mutableStateOf(false) }
+    var open by rememberSaveable(content) { mutableStateOf(false) }
+    // An open question folds again, even when it opened before a rotation measured it.
+    val foldable = long || open
     BoxWithConstraints(modifier, contentAlignment = Alignment.CenterEnd) {
         val maxBubble = maxWidth * 0.85f
-        SelectionContainer {
-            BasicText(
-                content,
-                style = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = if (compact) 16.sp else 15.sp, lineHeight = 1.4.em),
-                modifier = Modifier
-                    .widthIn(max = maxBubble)
-                    .background(if (compact) colors.accentSoftHover else colors.surfaceRaised, shape)
-                    .border(1.dp, if (compact) Color.Transparent else colors.border, shape)
-                    .padding(horizontal = if (compact) 18.dp else 16.dp, vertical = 12.dp)
-                    .semantics { contentDescription = "You: $content" },
-            )
+        Column(
+            Modifier
+                .widthIn(max = maxBubble)
+                .background(if (compact) colors.accentSoftHover else colors.surfaceRaised, shape)
+                .border(1.dp, if (compact) Color.Transparent else colors.border, shape)
+                .pressable(enabled = foldable, label = if (open) "Collapse question" else "Expand question") { open = !open }
+                .padding(start = if (compact) 18.dp else 16.dp, end = if (compact) 18.dp else 16.dp, top = 12.dp, bottom = if (foldable) 4.dp else 12.dp),
+        ) {
+            SelectionContainer {
+                BasicText(
+                    content,
+                    style = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = if (compact) 16.sp else 15.sp, lineHeight = 1.4.em),
+                    maxLines = if (open) Int.MAX_VALUE else FOLDED_LINES,
+                    overflow = TextOverflow.Clip,
+                    onTextLayout = { if (!open) long = it.hasVisualOverflow },
+                    modifier = Modifier
+                        .then(if (long && !open) Modifier.fadeOut() else Modifier)
+                        .semantics { contentDescription = "You: $content" },
+                )
+            }
+            if (foldable) {
+                Icon(Icons.Chevron, colors.textMuted, 18.dp, Modifier.align(Alignment.End).offset(x = 6.dp).rotate(if (open) -90f else 90f))
+            }
         }
     }
 }
+
+/** Fades the bottom of a folded question out, as the web app's mask does. */
+private fun Modifier.fadeOut(): Modifier = graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        drawRect(Brush.verticalGradient(0.55f to Color.Black, 1f to Color.Transparent), blendMode = BlendMode.DstIn)
+    }
 
 @Composable
 private fun Reply(
@@ -564,27 +602,12 @@ private fun Reply(
 @Composable
 private fun Progress(label: String, modifier: Modifier) {
     val colors = Theme.colors
-    val beat by rememberInfiniteTransition("progress").animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(600, easing = Ease), RepeatMode.Reverse),
-        label = "progress pulse",
-    )
     Row(
         modifier.semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier
-                .size(8.dp)
-                .graphicsLayer {
-                    alpha = 1 - 0.75f * beat
-                    scaleX = 1 - 0.3f * beat
-                    scaleY = scaleX
-                }
-                .background(colors.accent, Pill),
-        )
+        TappingDrop(20.dp)
         BasicText(label, style = TextStyle(color = colors.textMuted, fontFamily = Fonts.sans, fontSize = 13.sp))
     }
 }

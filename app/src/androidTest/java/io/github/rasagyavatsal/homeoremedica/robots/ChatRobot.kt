@@ -65,11 +65,11 @@ class ChatRobot(rule: ComposeTestRule) : Robot(rule) {
     fun undo() = tap(button("Undo"))
 
     /** The empty chat, which welcomes the reader with the tagline. */
-    fun seesWelcome() = waitFor(hasContentDescription("Ask the classical homoeopathic literature."))
+    fun seesWelcome() = waitFor(hasContentDescription("AI for homeopathy"))
 
-    /** Open source [number] of the newest answer from its card under the answer. */
-    fun openSource(number: Int): SourceRobot {
-        press(hasContentDescription("Source $number:", substring = true) and hasClickLabel("Open source"))
+    /** Open the newest answer's references from the row under it, at the first of them. */
+    fun openReferences(): SourceRobot {
+        press(hasClickLabel("Open references"))
         return SourceRobot(rule)
     }
 

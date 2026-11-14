@@ -33,11 +33,27 @@ class CitationsTest {
 
     @Test
     fun leavesCodeLinksAndReferencesUntouched() {
-        val markdown = "Use `[1]` or\n```\n[2]\n```\na [1](https://example.com) link, [1]: ref, [1][x], then [2]."
+        val markdown = "Use `[1]` or\n```\n[2]\n```\na [1](https://example.com) link, [1][x], then [2].\n[1]: https://example.com\n   [2]: https://example.com"
         assertEquals(
-            "Use `[1]` or\n```\n[2]\n```\na [1](https://example.com) link, [1]: ref, [1][x], then [2](#cite-2).",
+            "Use `[1]` or\n```\n[2]\n```\na [1](https://example.com) link, [1][x], then [2](#cite-2).\n[1]: https://example.com\n   [2]: https://example.com",
             linkCitations(markdown, 2),
         )
+    }
+
+    @Test
+    fun linksALabelFollowedByAColonMidSentence() {
+        assertEquals(
+            "Opposites [1](#cite-1) [3](#cite-3): Rhus, then [1](#cite-1)[3](#cite-3): Bryonia.",
+            linkCitations("Opposites [1] [3]: Rhus, then [1][3]: Bryonia.", 3),
+        )
+        assertEquals(setOf(1, 3), citedNumbers("Opposites [1] [3]: Rhus.", 3))
+    }
+
+    @Test
+    fun linksRangesAsTheWebAppDoes() {
+        assertEquals("Rhus [2](#cite-2)[3](#cite-3)[4](#cite-4).", linkCitations("Rhus [2–4].", 4))
+        assertEquals("Bryonia [1](#cite-1)[2](#cite-2)[4](#cite-4).", linkCitations("Bryonia [1-2, 4].", 4))
+        assertEquals("Beyond the sources [2-5].", linkCitations("Beyond the sources [2-5].", 4))
     }
 
     @Test
