@@ -305,10 +305,16 @@ fun ChatScreen(
             }
             // Beside the chat on wide screens, as the web app's `.sources` column.
             if (source != null && open != null && !compact) {
+                val sources = sourceAnswer?.sources.orEmpty()
+                val listed = remember(sourceAnswer?.content, sources.size) {
+                    referencedNumbers(sources.size, citedNumbers(sourceAnswer?.content.orEmpty(), sources.size))
+                }
                 key(source.id) {
                     SourcesPanel(
                         source,
                         open.number,
+                        remember(listed, open.number) { sourcePages(listed, open.number, sources.size) },
+                        { number -> openSource = OpenSource(open.messageId, number) },
                         closeSource,
                         Modifier
                             .width(panelWidth)

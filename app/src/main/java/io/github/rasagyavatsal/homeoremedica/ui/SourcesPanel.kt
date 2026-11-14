@@ -54,13 +54,23 @@ import io.github.rasagyavatsal.homeoremedica.ui.theme.Fonts
 import io.github.rasagyavatsal.homeoremedica.ui.theme.Theme
 
 /**
+ * The passages an answer's [count] sources page through, open at [number]: the [numbers] it lists, or every one
+ * when [number] is not among them, as from a chip in its text. Sources are numbered from 1.
+ */
+fun sourcePages(numbers: List<Int>, number: Int, count: Int): List<Int> =
+    if (number in numbers) numbers else (1..count).toList()
+
+/**
  * The passage behind one reference in an answer, beside the chat as the web app's sources panel
- * (src/web/SourcesPanel.tsx); [number] is its place in the answer, from 1. Phones show [SourceSheet] instead.
+ * (src/web/SourcesPanel.tsx); [number] is its place in the answer, from 1, and [onSelect] moves through
+ * [pages]. Phones show [SourceSheet] instead.
  */
 @Composable
 fun SourcesPanel(
     source: Citation,
     number: Int,
+    pages: List<Int>,
+    onSelect: (Int) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     rating: Rating? = null,
@@ -68,8 +78,25 @@ fun SourcesPanel(
     onRate: ((Rating?) -> Unit)? = null,
 ) {
     val colors = Theme.colors
+    val page = pages.indexOf(number)
     Column(modifier.background(colors.surface).statusBarsPadding()) {
         SourceHeader(source, number, rating, onRate, Modifier.rise(source.id, 200).padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp)) {
+            if (pages.size > 1) {
+                IconButton(
+                    Icons.ArrowLeft,
+                    "Previous source",
+                    { pages.getOrNull(page - 1)?.let(onSelect) },
+                    iconSize = 18.dp,
+                    enabled = page > 0,
+                )
+                IconButton(
+                    Icons.ArrowRight,
+                    "Next source",
+                    { pages.getOrNull(page + 1)?.let(onSelect) },
+                    iconSize = 18.dp,
+                    enabled = page in 0 until pages.lastIndex,
+                )
+            }
             CloseButton(onClose)
         }
         Spacer(Modifier.fillMaxWidth().height(1.dp).background(colors.border))
@@ -102,7 +129,7 @@ fun SourceSheet(
 ) {
     val colors = Theme.colors
     // A number the answer does not list, from a chip in its text, pages through all of them instead.
-    val pages = remember(numbers, number) { if (number in numbers) numbers else sources.indices.map { it + 1 } }
+    val pages = remember(numbers, number) { sourcePages(numbers, number, sources.size) }
     val pager = rememberPagerState(pages.indexOf(number).coerceAtLeast(0)) { pages.size }
     val select by rememberUpdatedState(onSelect)
     val haptics = LocalHapticFeedback.current
