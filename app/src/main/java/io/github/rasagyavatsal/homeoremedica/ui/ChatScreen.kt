@@ -504,6 +504,8 @@ private fun UserMessage(content: String, wide: Boolean, modifier: Modifier) {
     // Long when the fold hides some of the question, measured while folded; a tap opens or closes it.
     var long by remember(content) { mutableStateOf(false) }
     var open by rememberSaveable(content) { mutableStateOf(false) }
+    // An open question folds again, even when it opened before a rotation measured it.
+    val foldable = long || open
     BoxWithConstraints(modifier, contentAlignment = Alignment.CenterEnd) {
         val maxBubble = maxWidth * 0.85f
         Column(
@@ -511,8 +513,8 @@ private fun UserMessage(content: String, wide: Boolean, modifier: Modifier) {
                 .widthIn(max = maxBubble)
                 .background(if (compact) colors.accentSoftHover else colors.surfaceRaised, shape)
                 .border(1.dp, if (compact) Color.Transparent else colors.border, shape)
-                .pressable(enabled = long, label = if (open) "Collapse question" else "Expand question") { open = !open }
-                .padding(start = if (compact) 18.dp else 16.dp, end = if (compact) 18.dp else 16.dp, top = 12.dp, bottom = if (long) 4.dp else 12.dp),
+                .pressable(enabled = foldable, label = if (open) "Collapse question" else "Expand question") { open = !open }
+                .padding(start = if (compact) 18.dp else 16.dp, end = if (compact) 18.dp else 16.dp, top = 12.dp, bottom = if (foldable) 4.dp else 12.dp),
         ) {
             SelectionContainer {
                 BasicText(
@@ -526,7 +528,7 @@ private fun UserMessage(content: String, wide: Boolean, modifier: Modifier) {
                         .semantics { contentDescription = "You: $content" },
                 )
             }
-            if (long) {
+            if (foldable) {
                 Icon(Icons.Chevron, colors.textMuted, 18.dp, Modifier.align(Alignment.End).offset(x = 6.dp).rotate(if (open) -90f else 90f))
             }
         }
