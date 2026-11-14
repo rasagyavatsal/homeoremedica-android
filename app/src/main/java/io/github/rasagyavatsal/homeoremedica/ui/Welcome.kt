@@ -55,7 +55,7 @@ import kotlinx.coroutines.delay
 
 // Ports the web app's empty chat (src/web/Welcome.tsx).
 
-private const val TAGLINE = "Ask the classical homoeopathic literature."
+private const val TAGLINE = "AI for homeopathy"
 private val TaglineWords = TAGLINE.split(" ")
 
 // The web app's `--duration-reveal`, `--duration-word-stagger`, `--duration-glow-in` and `--duration-drift`.

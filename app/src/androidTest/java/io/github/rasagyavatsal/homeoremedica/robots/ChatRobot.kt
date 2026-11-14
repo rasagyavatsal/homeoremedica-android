@@ -65,7 +65,7 @@ class ChatRobot(rule: ComposeTestRule) : Robot(rule) {
     fun undo() = tap(button("Undo"))
 
     /** The empty chat, which welcomes the reader with the tagline. */
-    fun seesWelcome() = waitFor(hasContentDescription("Ask the classical homoeopathic literature."))
+    fun seesWelcome() = waitFor(hasContentDescription("AI for homeopathy"))
 
     /** Open the newest answer's references from the row under it, at the first of them. */
     fun openReferences(): SourceRobot {
