@@ -81,22 +81,6 @@ fun SourcesPanel(
     val page = pages.indexOf(number)
     Column(modifier.background(colors.surface).statusBarsPadding()) {
         SourceHeader(source, number, rating, onRate, Modifier.rise(source.id, 200).padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp)) {
-            if (pages.size > 1) {
-                IconButton(
-                    Icons.ArrowLeft,
-                    "Previous source",
-                    { pages.getOrNull(page - 1)?.let(onSelect) },
-                    iconSize = 18.dp,
-                    enabled = page > 0,
-                )
-                IconButton(
-                    Icons.ArrowRight,
-                    "Next source",
-                    { pages.getOrNull(page + 1)?.let(onSelect) },
-                    iconSize = 18.dp,
-                    enabled = page in 0 until pages.lastIndex,
-                )
-            }
             CloseButton(onClose)
         }
         Spacer(Modifier.fillMaxWidth().height(1.dp).background(colors.border))
@@ -105,10 +89,34 @@ fun SourcesPanel(
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .navigationBarsPadding()
+                .then(if (pages.size > 1) Modifier else Modifier.navigationBarsPadding())
                 .rise(source.id, 200)
                 .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
         )
+        // A row of its own under the passage, so the header keeps its width for the source's name and book.
+        if (pages.size > 1) {
+            Spacer(Modifier.fillMaxWidth().height(1.dp).background(colors.border))
+            Row(
+                Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(
+                    Icons.ArrowLeft,
+                    "Previous source",
+                    { pages.getOrNull(page - 1)?.let(onSelect) },
+                    iconSize = 18.dp,
+                    enabled = page > 0,
+                )
+                Dots(pages.size, page, Modifier.weight(1f))
+                IconButton(
+                    Icons.ArrowRight,
+                    "Next source",
+                    { pages.getOrNull(page + 1)?.let(onSelect) },
+                    iconSize = 18.dp,
+                    enabled = page in 0 until pages.lastIndex,
+                )
+            }
+        }
     }
 }
 
@@ -169,10 +177,10 @@ fun SourceSheet(
 
 /** Which of [count] pages shows, as a row of dots. */
 @Composable
-private fun Dots(count: Int, current: Int) {
+private fun Dots(count: Int, current: Int, modifier: Modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
     val colors = Theme.colors
     Row(
-        Modifier.fillMaxWidth().padding(bottom = 8.dp),
+        modifier,
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
