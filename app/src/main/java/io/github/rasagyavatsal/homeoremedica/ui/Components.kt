@@ -25,7 +25,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
@@ -53,6 +52,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.rasagyavatsal.homeoremedica.ui.theme.Ease
@@ -119,35 +119,23 @@ fun Modifier.pulse(): Modifier {
     return graphicsLayer { this.alpha = alpha }
 }
 
-// The web app's `--duration-pen`, and the pen's curve.
-private const val PEN_MILLIS = 1300
-private val PenEasing = CubicBezierEasing(0.65f, 0f, 0.35f, 1f)
-
-/** Whether the name has been written out once since the app started, after which it shows whole. */
-private var brandWritten = false
-
 /**
- * The name, as in the web app's `.brand`: an italic Homeo and an upright Remedica. The first time it shows it is
- * written out left to right, as with a pen.
+ * The name, as in the web app's `.brand`: an italic Homeo and an upright Remedica. [pen] is how much of it is
+ * written out, left to right.
  */
 @Composable
-fun Brand(modifier: Modifier = Modifier) {
+fun Brand(modifier: Modifier = Modifier, fontSize: TextUnit = 23.sp, pen: () -> Float = { 1f }) {
     val colors = Theme.colors
-    val first = remember { !brandWritten.also { brandWritten = true } }
-    val pen = remember { Animatable(if (first) 0f else 1f) }
-    LaunchedEffect(Unit) {
-        if (first) pen.animateTo(1f, tween(PEN_MILLIS, easing = PenEasing))
-    }
     BasicText(
         buildAnnotatedString {
             withStyle(SpanStyle(color = colors.accentText, fontStyle = FontStyle.Italic)) { append("Homeo") }
             append("Remedica")
         },
-        style = TextStyle(color = colors.text, fontFamily = Fonts.brand, fontSize = 23.sp),
+        style = TextStyle(color = colors.text, fontFamily = Fonts.brand, fontSize = fontSize),
         modifier = modifier
             .semantics { heading() }
             .drawWithContent {
-                clipRect(right = size.width * pen.value, top = -size.height, bottom = size.height * 2) { this@drawWithContent.drawContent() }
+                clipRect(right = size.width * pen(), top = -size.height, bottom = size.height * 2) { this@drawWithContent.drawContent() }
             },
     )
 }
