@@ -12,7 +12,10 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import io.github.rasagyavatsal.homeoremedica.R
 
 // The web app's design tokens (src/web/tokens.css): primitives, then the semantic roles that the
 // light and dark themes remap. Components read only the roles.
@@ -152,6 +155,8 @@ val DarkPalette = with(Primitives) {
 object Fonts {
     val sans: FontFamily = FontFamily.SansSerif
     val mono: FontFamily = FontFamily.Monospace
+    /** The wordmark's face only: the web app's `--font-brand`. */
+    val brand: FontFamily = FontFamily(Font(R.font.instrument_serif), Font(R.font.instrument_serif_italic, style = FontStyle.Italic))
 }
 
 /** The web app's `--ease-standard`. */
