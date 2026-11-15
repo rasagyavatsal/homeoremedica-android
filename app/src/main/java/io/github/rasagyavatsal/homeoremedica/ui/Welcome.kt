@@ -16,7 +16,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,7 +36,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -56,20 +54,17 @@ import kotlinx.coroutines.delay
 
 // Ports the web app's empty chat (src/web/Welcome.tsx).
 
-private const val TAGLINE = "AI for homeopathy"
-private val TaglineWords = TAGLINE.split(" ")
-
-// The web app's `--duration-reveal`, `--duration-word-stagger`, `--duration-glow-in` and `--duration-drift`.
+// The web app's `--duration-reveal`, `--duration-glow-in` and `--duration-drift`.
 const val REVEAL_MILLIS = 480
-private const val WORD_STAGGER_MILLIS = 60
+private const val EXAMPLE_STAGGER_MILLIS = 60
 private const val GLOW_IN_MILLIS = 1600
 private const val DRIFT_MILLIS = 14_000
 
 // CSS's `ease-in-out`, which each drift keyframe eases with.
 private val EaseInOut = CubicBezierEasing(0.42f, 0f, 0.58f, 1f)
 
-/** When the tagline's last word has started in, so the composer can follow it. */
-val TAGLINE_MILLIS = TaglineWords.size * WORD_STAGGER_MILLIS
+/** When the greeting is half written, so the composer can rise in under it. */
+const val TAGLINE_MILLIS = PEN_MILLIS / 2
 
 /** Questions a phone's empty chat offers to ask, for a first tap. */
 private val Examples = listOf(
@@ -78,28 +73,24 @@ private val Examples = listOf(
     "What does Kent say about Pulsatilla?",
 )
 
-/** The empty chat: what the app is for. On phones it sits by the message box, with [Examples] to ask. */
+/**
+ * The empty chat: a greeting for the time of day, picked once as the chat opens. On phones it sits by the message
+ * box, with [Examples] to ask.
+ */
 @Composable
 fun Welcome(bottomPadding: Dp, onExample: (String) -> Unit = {}) {
+    val line = remember { greeting() }
     if (LocalCompact.current) {
         Column(Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, bottom = bottomPadding)) {
             Spacer(Modifier.weight(1f))
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomStart) {
-                // Decoration only: soft light drifting behind the tagline.
+                // Decoration only: soft light drifting behind the greeting.
                 Glows(Modifier.fillMaxWidth(0.8f).height(256.dp))
                 Column(Modifier.padding(bottom = 12.dp)) {
-                    FlowRow(
-                        Modifier.padding(bottom = 20.dp).semantics(mergeDescendants = true) {
-                            heading()
-                            contentDescription = TAGLINE
-                        },
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        TaglineWords.forEachIndexed { index, word -> TaglineWord(word, index, 34.sp) }
-                    }
+                    Tagline(line, 34.sp, TextAlign.Start, Modifier.padding(bottom = 20.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Examples.forEachIndexed { index, example ->
-                            Example(example, Modifier.rise(example, REVEAL_MILLIS, TAGLINE_MILLIS + index * WORD_STAGGER_MILLIS)) { onExample(example) }
+                            Example(example, Modifier.rise(example, REVEAL_MILLIS, TAGLINE_MILLIS + index * EXAMPLE_STAGGER_MILLIS)) { onExample(example) }
                         }
                     }
                 }
@@ -111,17 +102,9 @@ fun Welcome(bottomPadding: Dp, onExample: (String) -> Unit = {}) {
         Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp, bottom = bottomPadding),
         contentAlignment = Alignment.Center,
     ) {
-        // Decoration only: soft light drifting behind the tagline.
+        // Decoration only: soft light drifting behind the greeting.
         Glows(Modifier.fillMaxWidth(0.8f).height(256.dp))
-        FlowRow(
-            Modifier.padding(vertical = 64.dp).semantics(mergeDescendants = true) {
-                heading()
-                contentDescription = TAGLINE
-            },
-            horizontalArrangement = Arrangement.spacedBy(9.dp, Alignment.CenterHorizontally),
-        ) {
-            TaglineWords.forEachIndexed { index, word -> TaglineWord(word, index) }
-        }
+        Tagline(line, 32.sp, TextAlign.Center, Modifier.padding(vertical = 64.dp))
     }
 }
 
@@ -142,28 +125,23 @@ private fun Example(text: String, modifier: Modifier, onClick: () -> Unit) {
     )
 }
 
-/** One word of the tagline, rising in after the ones before it. */
+/** The greeting, written out left to right as the name is, once the launch screen lifts. */
 @Composable
-private fun TaglineWord(word: String, index: Int, size: TextUnit = 32.sp) {
-    val progress = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        delay(index * WORD_STAGGER_MILLIS.toLong())
-        progress.animateTo(1f, tween(REVEAL_MILLIS, easing = Ease))
-    }
+private fun Tagline(text: String, size: TextUnit, align: TextAlign, modifier: Modifier) {
+    val launching = LocalLaunching.current
+    val pen = remember { Animatable(0f) }
+    LaunchedEffect(launching) { if (!launching) pen.animateTo(1f, tween(PEN_MILLIS, easing = PenEasing)) }
     BasicText(
-        word,
+        text,
         style = TextStyle(
             color = Theme.colors.text,
             fontFamily = Fonts.sans,
             fontSize = size,
             lineHeight = 1.25.em,
             fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.Center,
+            textAlign = align,
         ),
-        modifier = Modifier.graphicsLayer {
-            alpha = progress.value
-            translationY = (1 - progress.value) * 8.dp.toPx()
-        },
+        modifier = modifier.semantics { heading() }.penStroke { pen.value },
     )
 }
 
@@ -171,9 +149,11 @@ private fun TaglineWord(word: String, index: Int, size: TextUnit = 32.sp) {
 @Composable
 private fun Glows(modifier: Modifier) {
     val colors = Theme.colors
+    val launching = LocalLaunching.current
     val fade = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        delay(TAGLINE_MILLIS.toLong())
+    LaunchedEffect(launching) {
+        if (launching) return@LaunchedEffect
+        delay(PEN_MILLIS.toLong())
         fade.animateTo(1f, tween(GLOW_IN_MILLIS, easing = Ease))
     }
     val transition = rememberInfiniteTransition("glows")

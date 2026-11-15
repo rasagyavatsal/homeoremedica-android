@@ -287,7 +287,8 @@ fun ChatScreen(
                 CompositionLocalProvider(LocalEntrances provides remember(state.id) { Entrances() }) {
                     Box(Modifier.weight(1f).fillMaxWidth()) {
                         if (state.messages.isEmpty()) {
-                            Welcome(composerSpace, onExample = { submit(it) })
+                            // Each new chat picks its greeting afresh.
+                            key(state.id) { Welcome(composerSpace, onExample = { submit(it) }) }
                         } else {
                             key(state.id) { Conversation(state, wide, composerSpace, open, showSource, case, onRetry, onConfirm, onRate, onNote) }
                         }
