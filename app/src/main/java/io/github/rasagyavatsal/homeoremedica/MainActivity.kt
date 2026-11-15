@@ -136,7 +136,8 @@ class MainActivity : ComponentActivity() {
                                 onClose = { deleting = false },
                             )
                         }
-                        if (notice) {
+                        // The notice waits for the name to finish writing out.
+                        if (notice && !launching) {
                             PractitionerNotice {
                                 preferences.acknowledgeNotice()
                                 notice = false
