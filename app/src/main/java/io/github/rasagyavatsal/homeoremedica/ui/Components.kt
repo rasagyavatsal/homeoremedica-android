@@ -22,14 +22,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
-import kotlinx.coroutines.launch
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.graphics.drawscope.clipRect
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -124,9 +119,8 @@ fun Modifier.pulse(): Modifier {
     return graphicsLayer { this.alpha = alpha }
 }
 
-// The web app's `--duration-pen` and `--duration-underline`, and the pen's curve.
+// The web app's `--duration-pen`, and the pen's curve.
 private const val PEN_MILLIS = 1300
-private const val UNDERLINE_MILLIS = 600
 private val PenEasing = CubicBezierEasing(0.65f, 0f, 0.35f, 1f)
 
 /** Whether the name has been written out once since the app started, after which it shows whole. */
@@ -134,40 +128,26 @@ private var brandWritten = false
 
 /**
  * The name, as in the web app's `.brand`: an italic Homeo and an upright Remedica. The first time it shows it is
- * written out left to right, as with a pen, then Homeo is underlined.
+ * written out left to right, as with a pen.
  */
 @Composable
 fun Brand(modifier: Modifier = Modifier) {
     val colors = Theme.colors
     val first = remember { !brandWritten.also { brandWritten = true } }
     val pen = remember { Animatable(if (first) 0f else 1f) }
-    val underline = remember { Animatable(if (first) 0f else 1f) }
     LaunchedEffect(Unit) {
-        if (!first) return@LaunchedEffect
-        launch { pen.animateTo(1f, tween(PEN_MILLIS, easing = PenEasing)) }
-        delay((PEN_MILLIS - 200).toLong())
-        underline.animateTo(1f, tween(UNDERLINE_MILLIS, easing = Ease))
+        if (first) pen.animateTo(1f, tween(PEN_MILLIS, easing = PenEasing))
     }
-    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     BasicText(
         buildAnnotatedString {
             withStyle(SpanStyle(color = colors.accentText, fontStyle = FontStyle.Italic)) { append("Homeo") }
             append("Remedica")
         },
         style = TextStyle(color = colors.text, fontFamily = Fonts.brand, fontSize = 23.sp),
-        onTextLayout = { layout = it },
         modifier = modifier
             .semantics { heading() }
             .drawWithContent {
-                clipRect(right = size.width * pen.value, top = -size.height, bottom = size.height * 2) {
-                    this@drawWithContent.drawContent()
-                    val text = layout ?: return@clipRect
-                    // Under Homeo, a little below the baseline.
-                    val end = text.getHorizontalPosition(5, usePrimaryDirection = true) - 0.05f * text.layoutInput.style.fontSize.toPx()
-                    val y = text.getLineBaseline(0) + 0.16f * text.layoutInput.style.fontSize.toPx()
-                    val width = 1.5.dp.toPx()
-                    if (underline.value > 0f) drawLine(colors.accentText, Offset(0f, y), Offset(end * underline.value, y), width)
-                }
+                clipRect(right = size.width * pen.value, top = -size.height, bottom = size.height * 2) { this@drawWithContent.drawContent() }
             },
     )
 }
