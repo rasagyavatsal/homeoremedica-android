@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.1](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.7.0...v3.7.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* center the H in the Play store icon ([3495ad2](https://github.com/rasagyavatsal/homeoremedica-android/commit/3495ad2af84851c496fe5f5242c0e956820e60d8))
+
 ## [3.7.0](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.6.0...v3.7.0) (2026-11-15)
 
 
