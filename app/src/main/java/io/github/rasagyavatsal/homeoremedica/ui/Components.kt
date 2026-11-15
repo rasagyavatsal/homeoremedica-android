@@ -115,7 +115,7 @@ fun Modifier.pulse(): Modifier {
     return graphicsLayer { this.alpha = alpha }
 }
 
-/** The potency drop and the name, as in the web app's `.brand`. */
+/** The logo and the name, as in the web app's `.brand`. */
 @Composable
 fun Brand(modifier: Modifier = Modifier) {
     val colors = Theme.colors
@@ -124,7 +124,7 @@ fun Brand(modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Drop, colors.accent, 28.dp)
+        Icon(Icons.Plate, colors.accent, 28.dp)
         BasicText(
             buildAnnotatedString {
                 withStyle(SpanStyle(color = colors.accentText)) { append("Homeo") }

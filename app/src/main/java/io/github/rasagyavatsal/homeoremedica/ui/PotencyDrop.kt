@@ -35,7 +35,7 @@ import kotlin.math.exp
 import kotlin.math.pow
 import kotlin.math.sin
 
-// The potency drop (Icons.Drop) drawn in motion, in its 24-unit box.
+// The potency drop drawn in motion, in its 24-unit box.
 
 private const val TOP = 2f
 private const val BOTTOM = 22.75f
@@ -101,7 +101,7 @@ fun FillingDrop(size: Dp, modifier: Modifier = Modifier) {
     val time = loopSeconds(FILL_MILLIS, "filling drop")
     Canvas(modifier.size(size).graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }) {
         val t = time?.invoke()
-        // Animations off: the whole logo.
+        // Animations off: the whole drop.
         val level = when {
             t == null -> 1f
             t < 3.2f -> {
