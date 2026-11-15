@@ -14,8 +14,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -68,9 +68,6 @@ private const val DRIFT_MILLIS = 14_000
 // CSS's `ease-in-out`, which each drift keyframe eases with.
 private val EaseInOut = CubicBezierEasing(0.42f, 0f, 0.58f, 1f)
 
-/** How big the drop filling up is on an empty screen with room for it. */
-private val DROP_SIZE = 112.dp
-
 /** When the tagline's last word has started in, so the composer can follow it. */
 val TAGLINE_MILLIS = TaglineWords.size * WORD_STAGGER_MILLIS
 
@@ -86,8 +83,7 @@ private val Examples = listOf(
 fun Welcome(bottomPadding: Dp, onExample: (String) -> Unit = {}) {
     if (LocalCompact.current) {
         Column(Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, bottom = bottomPadding)) {
-            // Decoration only: the drop filling up, in the room above the tagline.
-            DropRoom(Modifier.weight(1f).fillMaxWidth())
+            Spacer(Modifier.weight(1f))
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomStart) {
                 // Decoration only: soft light drifting behind the tagline.
                 Glows(Modifier.fillMaxWidth(0.8f).height(256.dp))
@@ -126,15 +122,6 @@ fun Welcome(bottomPadding: Dp, onExample: (String) -> Unit = {}) {
         ) {
             TaglineWords.forEachIndexed { index, word -> TaglineWord(word, index) }
         }
-    }
-}
-
-/** Room on a phone's empty screen, with the drop filling up in its middle once there is space for it. */
-@Composable
-fun DropRoom(modifier: Modifier) {
-    BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
-        val size = minOf(DROP_SIZE, maxHeight * 0.6f)
-        if (size >= DROP_SIZE / 2) FillingDrop(size)
     }
 }
 

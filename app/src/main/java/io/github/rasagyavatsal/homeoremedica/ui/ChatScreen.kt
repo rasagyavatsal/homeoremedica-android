@@ -607,7 +607,6 @@ private fun Progress(label: String, modifier: Modifier) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TappingDrop(20.dp)
         BasicText(label, style = TextStyle(color = colors.textMuted, fontFamily = Fonts.sans, fontSize = 13.sp))
     }
 }

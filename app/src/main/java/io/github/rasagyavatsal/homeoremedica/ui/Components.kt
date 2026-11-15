@@ -115,24 +115,18 @@ fun Modifier.pulse(): Modifier {
     return graphicsLayer { this.alpha = alpha }
 }
 
-/** The logo and the name, as in the web app's `.brand`. */
+/** The name, as in the web app's `.brand`. */
 @Composable
 fun Brand(modifier: Modifier = Modifier) {
     val colors = Theme.colors
-    Row(
-        modifier.semantics(mergeDescendants = true) { heading() },
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(Icons.Plate, colors.accent, 28.dp)
-        BasicText(
-            buildAnnotatedString {
-                withStyle(SpanStyle(color = colors.accentText)) { append("Homeo") }
-                append("Remedica")
-            },
-            style = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
-        )
-    }
+    BasicText(
+        buildAnnotatedString {
+            withStyle(SpanStyle(color = colors.accentText)) { append("Homeo") }
+            append("Remedica")
+        },
+        style = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+        modifier = modifier.semantics { heading() },
+    )
 }
 
 enum class ButtonStyle { Primary, Outline, Quiet, Danger }

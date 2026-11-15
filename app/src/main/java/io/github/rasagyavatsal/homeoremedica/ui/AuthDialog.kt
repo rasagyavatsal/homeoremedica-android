@@ -92,8 +92,7 @@ fun AuthDialog(auth: AuthClient, onClose: () -> Unit) {
         sent = false
     }
 
-    // Signing in or up, the drop fills the room above the form.
-    TaskPage(mode.title, onClose, art = if (mode != Mode.Reset) { modifier -> DropRoom(modifier) } else null) {
+    TaskPage(mode.title, onClose) {
         if (mode != Mode.Reset && auth.google) {
             Button(
                 "Continue with Google",

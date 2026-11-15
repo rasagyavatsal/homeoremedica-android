@@ -138,10 +138,10 @@ fun DialogButtons(vararg buttons: @Composable (Modifier) -> Unit) {
 
 /**
  * A task such as signing in: a page over the whole app on phones, with a back arrow and room for the
- * keyboard, and a [Dialog] on wide screens. Back and the back arrow call [onClose]. Phones show [art] above the content.
+ * keyboard, and a [Dialog] on wide screens. Back and the back arrow call [onClose].
  */
 @Composable
-fun TaskPage(title: String, onClose: () -> Unit, art: (@Composable (Modifier) -> Unit)? = null, content: @Composable () -> Unit) {
+fun TaskPage(title: String, onClose: () -> Unit, content: @Composable () -> Unit) {
     if (!LocalCompact.current) {
         Dialog(title, onClose, content = content)
         return
@@ -174,10 +174,9 @@ fun TaskPage(title: String, onClose: () -> Unit, art: (@Composable (Modifier) ->
                     modifier = Modifier.semantics { heading() },
                 )
             }
-            // Decoration in the room above the page's content, which gives way to the keyboard.
-            art?.invoke(Modifier.weight(1f).fillMaxWidth())
             Column(
-                (if (art == null) Modifier.weight(1f) else Modifier)
+                Modifier
+                    .weight(1f)
                     .fillMaxWidth()
                     .imePadding()
                     .verticalScroll(rememberScrollState())
