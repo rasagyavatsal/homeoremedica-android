@@ -10,12 +10,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,24 +20,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -56,7 +53,6 @@ import kotlinx.coroutines.delay
 
 // The web app's `--duration-reveal`, `--duration-glow-in` and `--duration-drift`.
 const val REVEAL_MILLIS = 480
-private const val EXAMPLE_STAGGER_MILLIS = 60
 private const val GLOW_IN_MILLIS = 1600
 private const val DRIFT_MILLIS = 14_000
 
@@ -66,82 +62,64 @@ private val EaseInOut = CubicBezierEasing(0.42f, 0f, 0.58f, 1f)
 /** When the greeting is half written, so the composer can rise in under it. */
 const val TAGLINE_MILLIS = PEN_MILLIS / 2
 
-/** Questions a phone's empty chat offers to ask, for a first tap. */
-private val Examples = listOf(
-    "Remedies for irritability in the morning",
-    "Compare Bryonia and Rhus tox in rheumatism",
-    "What does Kent say about Pulsatilla?",
-)
-
-/**
- * The empty chat: a greeting for the time of day, picked once as the chat opens. On phones it sits by the message
- * box, with [Examples] to ask.
- */
+/** The empty chat: a greeting for the time of day, picked once as the chat opens. On phones it sits by the message box. */
 @Composable
-fun Welcome(bottomPadding: Dp, onExample: (String) -> Unit = {}) {
+fun Welcome(bottomPadding: Dp) {
     val line = remember { greeting() }
-    if (LocalCompact.current) {
-        Column(Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, bottom = bottomPadding)) {
-            Spacer(Modifier.weight(1f))
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomStart) {
-                // Decoration only: soft light drifting behind the greeting.
-                Glows(Modifier.fillMaxWidth(0.8f).height(256.dp))
-                Column(Modifier.padding(bottom = 12.dp)) {
-                    Tagline(line, 34.sp, TextAlign.Start, Modifier.padding(bottom = 20.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Examples.forEachIndexed { index, example ->
-                            Example(example, Modifier.rise(example, REVEAL_MILLIS, TAGLINE_MILLIS + index * EXAMPLE_STAGGER_MILLIS)) { onExample(example) }
-                        }
-                    }
-                }
-            }
-        }
-        return
-    }
+    val compact = LocalCompact.current
     Box(
-        Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp, bottom = bottomPadding),
-        contentAlignment = Alignment.Center,
+        Modifier.fillMaxSize().padding(start = if (compact) 20.dp else 16.dp, end = if (compact) 20.dp else 16.dp, bottom = bottomPadding),
+        contentAlignment = if (compact) Alignment.BottomStart else Alignment.Center,
     ) {
         // Decoration only: soft light drifting behind the greeting.
         Glows(Modifier.fillMaxWidth(0.8f).height(256.dp))
-        Tagline(line, 32.sp, TextAlign.Center, Modifier.padding(vertical = 64.dp))
+        if (compact) {
+            Tagline(line, TextAlign.Start, Modifier.padding(bottom = 32.dp))
+        } else {
+            Tagline(line, TextAlign.Center, Modifier.padding(vertical = 64.dp))
+        }
     }
 }
 
-/** A question to ask with one tap: a filled pill. */
+/**
+ * The greeting in the name's serif, written out as the name is once the launch screen lifts: one line after
+ * another, as a pen would.
+ */
 @Composable
-private fun Example(text: String, modifier: Modifier, onClick: () -> Unit) {
-    val colors = Theme.colors
-    val interactions = remember { MutableInteractionSource() }
-    val pressed by interactions.pressed()
-    BasicText(
-        text,
-        style = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = 16.sp, lineHeight = 22.sp),
-        modifier = modifier
-            .clip(Pill)
-            .background(if (pressed) colors.borderStrong else colors.surfaceSelected)
-            .pressable(label = "Ask", interactionSource = interactions, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 14.dp),
-    )
-}
-
-/** The greeting, written out left to right as the name is, once the launch screen lifts. */
-@Composable
-private fun Tagline(text: String, size: TextUnit, align: TextAlign, modifier: Modifier) {
+private fun Tagline(text: String, align: TextAlign, modifier: Modifier) {
     val launching = LocalLaunching.current
     val pen = remember { Animatable(0f) }
     LaunchedEffect(launching) { if (!launching) pen.animateTo(1f, tween(PEN_MILLIS, easing = PenEasing)) }
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     BasicText(
         text,
         style = TextStyle(
             color = Theme.colors.text,
-            fontFamily = Fonts.sans,
-            fontSize = size,
-            lineHeight = 1.25.em,
-            fontWeight = FontWeight.Medium,
+            fontFamily = Fonts.brand,
+            fontSize = 40.sp,
+            lineHeight = 1.15.em,
             textAlign = align,
         ),
-        modifier = modifier.semantics { heading() }.penStroke { pen.value },
+        onTextLayout = { layout = it },
+        modifier = modifier.semantics { heading() }.drawWithContent {
+            val lines = layout ?: return@drawWithContent
+            // The pen's progress runs along the lines laid end to end.
+            var ink = pen.value * (0 until lines.lineCount).sumOf { (lines.getLineRight(it) - lines.getLineLeft(it)).toDouble() }.toFloat()
+            for (index in 0 until lines.lineCount) {
+                if (ink <= 0f) break
+                val left = lines.getLineLeft(index)
+                val width = lines.getLineRight(index) - left
+                // Serif tails can reach past the outer lines' boxes, so those keep a little room; inner edges stay
+                // exact so one line's pen never shows the next.
+                val slack = (lines.getLineBottom(index) - lines.getLineTop(index)) * 0.2f
+                val top = lines.getLineTop(index) - if (index == 0) slack else 0f
+                val bottom = lines.getLineBottom(index) + if (index == lines.lineCount - 1) slack else 0f
+                clipRect(left, top, left + minOf(ink, width), bottom) {
+                    this@drawWithContent.drawContent()
+                }
+                ink -= width
+            }
+        },
     )
 }
 

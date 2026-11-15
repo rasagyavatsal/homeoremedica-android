@@ -288,7 +288,7 @@ fun ChatScreen(
                     Box(Modifier.weight(1f).fillMaxWidth()) {
                         if (state.messages.isEmpty()) {
                             // Each new chat picks its greeting afresh.
-                            key(state.id) { Welcome(composerSpace, onExample = { submit(it) }) }
+                            key(state.id) { Welcome(composerSpace) }
                         } else {
                             key(state.id) { Conversation(state, wide, composerSpace, open, showSource, case, onRetry, onConfirm, onRate, onNote) }
                         }
