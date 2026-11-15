@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.7.0](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.6.0...v3.7.0) (2026-11-15)
+
+
+### Features
+
+* drop the underline from the name ([277f43e](https://github.com/rasagyavatsal/homeoremedica-android/commit/277f43e228791693098a4a2081faf4eebad90002))
+* greet an empty chat for the time of day, written out like the name ([866c189](https://github.com/rasagyavatsal/homeoremedica-android/commit/866c189a2079b696c376053267393d371c507483))
+* remove the drifting glows behind the greeting ([48f09ac](https://github.com/rasagyavatsal/homeoremedica-android/commit/48f09ac2a9a8e6880159a81974c5b9a6b9582d57))
+* remove the logo and the drop animations, leaving the name ([bee23ee](https://github.com/rasagyavatsal/homeoremedica-android/commit/bee23ee0d4284e8b26d978f096e6437e790f7990))
+* set the greeting in Instrument Serif, write it out one line at a time, and drop the example questions ([f6e0201](https://github.com/rasagyavatsal/homeoremedica-android/commit/f6e02011d2a244710fd20ba6db07e59589b16b73))
+* set the name in Instrument Serif and write it out with a pen stroke ([1fac3b8](https://github.com/rasagyavatsal/homeoremedica-android/commit/1fac3b8d566b4703881647bff04c899708537448))
+* use an open materia medica with a pressed flower as the logo ([988f756](https://github.com/rasagyavatsal/homeoremedica-android/commit/988f7563ed9aa66e2fa991eccf9e449edc971f91))
+* use the wordmark's italic H as the launcher icon ([dde1b18](https://github.com/rasagyavatsal/homeoremedica-android/commit/dde1b181188bfd35fc2a0cf19e149a9d773d7a93))
+* write out the name and a time-of-day greeting in Instrument Serif ([7d3b7f8](https://github.com/rasagyavatsal/homeoremedica-android/commit/7d3b7f85ded0780494408deddf29ea0a05c4b796))
+* write out the whole name on a launch screen when the app opens ([55a3b4d](https://github.com/rasagyavatsal/homeoremedica-android/commit/55a3b4d89441d9dbcd4f6027281d803d27035809))
+
+
+### Bug Fixes
+
+* show the practitioner notice after the launch screen finishes ([0debd1d](https://github.com/rasagyavatsal/homeoremedica-android/commit/0debd1ddb4cec63c1639220c3a65d5b4302c5d8c))
+
 ## [3.6.0](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.5.1...v3.6.0) (2026-11-14)
 
 
