@@ -287,7 +287,8 @@ fun ChatScreen(
                 CompositionLocalProvider(LocalEntrances provides remember(state.id) { Entrances() }) {
                     Box(Modifier.weight(1f).fillMaxWidth()) {
                         if (state.messages.isEmpty()) {
-                            Welcome(composerSpace, onExample = { submit(it) })
+                            // Each new chat picks its greeting afresh.
+                            key(state.id) { Welcome(composerSpace) }
                         } else {
                             key(state.id) { Conversation(state, wide, composerSpace, open, showSource, case, onRetry, onConfirm, onRate, onNote) }
                         }
@@ -607,7 +608,6 @@ private fun Progress(label: String, modifier: Modifier) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TappingDrop(20.dp)
         BasicText(label, style = TextStyle(color = colors.textMuted, fontFamily = Fonts.sans, fontSize = 13.sp))
     }
 }

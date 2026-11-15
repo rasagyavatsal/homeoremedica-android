@@ -32,6 +32,8 @@ import io.github.rasagyavatsal.homeoremedica.ui.AppFrame
 import io.github.rasagyavatsal.homeoremedica.ui.AuthDialog
 import io.github.rasagyavatsal.homeoremedica.ui.DeleteAccountDialog
 import io.github.rasagyavatsal.homeoremedica.ui.ChatScreen
+import io.github.rasagyavatsal.homeoremedica.ui.LaunchScreen
+import io.github.rasagyavatsal.homeoremedica.ui.LocalLaunching
 import io.github.rasagyavatsal.homeoremedica.ui.LegalPage
 import io.github.rasagyavatsal.homeoremedica.ui.LegalPageName
 import io.github.rasagyavatsal.homeoremedica.ui.LocalOpenLegal
@@ -103,13 +105,15 @@ class MainActivity : ComponentActivity() {
             var notice by remember { mutableStateOf(!preferences.noticeAcknowledged) }
             var signingIn by rememberSaveable { mutableStateOf(false) }
             var deleting by rememberSaveable { mutableStateOf(false) }
+            var launching by rememberSaveable { mutableStateOf(true) }
+            var covered by rememberSaveable { mutableStateOf(true) }
             val account by accounts.state.collectAsStateWithLifecycle()
             // A verification made from the link in the email shows when the app comes back.
             LifecycleResumeEffect(Unit) {
                 accounts.refresh()
                 onPauseOrDispose {}
             }
-            CompositionLocalProvider(LocalThemeControl provides control, LocalOpenLegal provides { legal = it }) {
+            CompositionLocalProvider(LocalThemeControl provides control, LocalOpenLegal provides { legal = it }, LocalLaunching provides covered) {
                 HomeoRemedicaTheme(dark) {
                     AppFrame {
                         ChatScreen(viewModel) {
@@ -132,13 +136,15 @@ class MainActivity : ComponentActivity() {
                                 onClose = { deleting = false },
                             )
                         }
-                        if (notice) {
+                        // The notice waits for the name to finish writing out.
+                        if (notice && !launching) {
                             PractitionerNotice {
                                 preferences.acknowledgeNotice()
                                 notice = false
                             }
                         }
                         legal?.let { page -> LegalPage(page, onOpen = { legal = it }, onClose = { legal = null }) }
+                        if (launching) LaunchScreen(onReveal = { covered = false }, onDone = { launching = false })
                     }
                 }
             }

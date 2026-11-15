@@ -1,6 +1,7 @@
 package io.github.rasagyavatsal.homeoremedica.ui
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -22,6 +23,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
@@ -49,6 +53,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.rasagyavatsal.homeoremedica.ui.theme.Ease
@@ -91,12 +96,13 @@ class Entrances {
 
 val LocalEntrances = compositionLocalOf { Entrances() }
 
-/** The web app's `rise` entrance: fade in while moving up 6dp, after [delayMillis]. */
+/** The web app's `rise` entrance: fade in while moving up 6dp, after [delayMillis] and once the launch screen lifts. */
 @Composable
 fun Modifier.rise(key: Any, durationMillis: Int = 320, delayMillis: Int = 0): Modifier {
     val entrances = LocalEntrances.current
+    val launching = LocalLaunching.current
     val progress = remember(key) { Animatable(if (entrances.first(key)) 0f else 1f) }
-    LaunchedEffect(key) { progress.animateTo(1f, tween(durationMillis, delayMillis, easing = Ease)) }
+    LaunchedEffect(key, launching) { if (!launching) progress.animateTo(1f, tween(durationMillis, delayMillis, easing = Ease)) }
     return graphicsLayer {
         alpha = progress.value
         translationY = (1 - progress.value) * 6.dp.toPx()
@@ -115,24 +121,32 @@ fun Modifier.pulse(): Modifier {
     return graphicsLayer { this.alpha = alpha }
 }
 
-/** The potency drop and the name, as in the web app's `.brand`. */
+// The web app's `--duration-pen`, and the pen's curve, for the name and the greeting.
+const val PEN_MILLIS = 1300
+val PenEasing = CubicBezierEasing(0.65f, 0f, 0.35f, 1f)
+
+/** Draws only the first [pen] of this, from the left, as if written out with a pen. */
+fun Modifier.penStroke(pen: () -> Float): Modifier = drawWithContent {
+    clipRect(right = size.width * pen(), top = -size.height, bottom = size.height * 2) { this@drawWithContent.drawContent() }
+}
+
+/**
+ * The name, as in the web app's `.brand`: an italic Homeo and an upright Remedica. [pen] is how much of it is
+ * written out, left to right.
+ */
 @Composable
-fun Brand(modifier: Modifier = Modifier) {
+fun Brand(modifier: Modifier = Modifier, fontSize: TextUnit = 23.sp, pen: () -> Float = { 1f }) {
     val colors = Theme.colors
-    Row(
-        modifier.semantics(mergeDescendants = true) { heading() },
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(Icons.Drop, colors.accent, 28.dp)
-        BasicText(
-            buildAnnotatedString {
-                withStyle(SpanStyle(color = colors.accentText)) { append("Homeo") }
-                append("Remedica")
-            },
-            style = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
-        )
-    }
+    BasicText(
+        buildAnnotatedString {
+            withStyle(SpanStyle(color = colors.accentText, fontStyle = FontStyle.Italic)) { append("Homeo") }
+            append("Remedica")
+        },
+        style = TextStyle(color = colors.text, fontFamily = Fonts.brand, fontSize = fontSize),
+        modifier = modifier
+            .semantics { heading() }
+            .penStroke(pen),
+    )
 }
 
 enum class ButtonStyle { Primary, Outline, Quiet, Danger }

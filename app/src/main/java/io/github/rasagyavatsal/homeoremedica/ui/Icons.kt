@@ -49,13 +49,6 @@ private fun filled(name: String, path: String): ImageVector = ImageVector.Builde
 }.build()
 
 object Icons {
-    /** The potency drop: a drop with a ring and centre cut out, after the rings of a dilution. */
-    val Drop = icon(
-        "Drop",
-        fills = listOf(
-            "M12 2C12 2 4.5 10.25 4.5 15.25A7.5 7.5 0 0 0 19.5 15.25C19.5 10.25 12 2 12 2ZM7.2 15.25a4.8 4.8 0 1 0 9.6 0a4.8 4.8 0 1 0-9.6 0ZM8.3 15.25a3.7 3.7 0 1 0 7.4 0a3.7 3.7 0 1 0-7.4 0ZM10.7 15.25a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0Z",
-        ),
-    )
     val ArrowUp = icon("ArrowUp", "M12 19V5m-6 6 6-6 6 6")
     val ArrowLeft = icon("ArrowLeft", "M19 12H5m6-6-6 6 6 6")
     val ArrowRight = icon("ArrowRight", "M5 12h14m-6-6 6 6-6 6")

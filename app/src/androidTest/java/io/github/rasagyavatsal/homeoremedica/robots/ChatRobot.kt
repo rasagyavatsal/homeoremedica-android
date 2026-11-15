@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performTextInput
 import io.github.rasagyavatsal.homeoremedica.support.AppRule
+import io.github.rasagyavatsal.homeoremedica.ui.greetingsAt
 
 /** The open chat: the composer, the conversation and its answers. */
 class ChatRobot(rule: ComposeTestRule) : Robot(rule) {
@@ -64,8 +65,8 @@ class ChatRobot(rule: ComposeTestRule) : Robot(rule) {
     /** Take back what the notice reports, such as a deleted chat. */
     fun undo() = tap(button("Undo"))
 
-    /** The empty chat, which welcomes the reader with the tagline. */
-    fun seesWelcome() = waitFor(hasContentDescription("AI for homeopathy"))
+    /** The empty chat, which welcomes the reader with a greeting for some hour of the day. */
+    fun seesWelcome() = waitFor((0..23).flatMap(::greetingsAt).distinct().map { hasText(it) }.reduce { a, b -> a or b })
 
     /** Open the newest answer's references from the row under it, at the first of them. */
     fun openReferences(): SourceRobot {

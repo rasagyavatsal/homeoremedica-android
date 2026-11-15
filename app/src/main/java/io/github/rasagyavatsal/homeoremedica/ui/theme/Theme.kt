@@ -12,7 +12,10 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import io.github.rasagyavatsal.homeoremedica.R
 
 // The web app's design tokens (src/web/tokens.css): primitives, then the semantic roles that the
 // light and dark themes remap. Components read only the roles.
@@ -74,8 +77,6 @@ data class Palette(
     val accentSoft: Color,
     val accentSoftHover: Color,
     val accentBorder: Color,
-    val glow: Color,
-    val glowWarm: Color,
     val danger: Color,
     val dangerHover: Color,
     val dangerSoft: Color,
@@ -105,8 +106,6 @@ val LightPalette = with(Primitives) {
         accentSoft = herb50,
         accentSoftHover = herb100,
         accentBorder = herb200,
-        glow = Color(146, 185, 156).copy(alpha = 0.4f),
-        glowWarm = Color(224, 192, 122).copy(alpha = 0.25f),
         danger = rust600,
         dangerHover = rust500,
         dangerSoft = rust100,
@@ -137,8 +136,6 @@ val DarkPalette = with(Primitives) {
         accentSoft = herb900,
         accentSoftHover = herb800,
         accentBorder = herb800,
-        glow = Color(77, 127, 92).copy(alpha = 0.28f),
-        glowWarm = Color(138, 101, 20).copy(alpha = 0.18f),
         danger = rust300,
         dangerHover = rust100,
         dangerSoft = rust900,
@@ -152,6 +149,8 @@ val DarkPalette = with(Primitives) {
 object Fonts {
     val sans: FontFamily = FontFamily.SansSerif
     val mono: FontFamily = FontFamily.Monospace
+    /** The wordmark's face only: the web app's `--font-brand`. */
+    val brand: FontFamily = FontFamily(Font(R.font.instrument_serif), Font(R.font.instrument_serif_italic, style = FontStyle.Italic))
 }
 
 /** The web app's `--ease-standard`. */
@@ -208,8 +207,6 @@ private fun lerp(fraction: Float): Palette {
         accentSoft = mix { accentSoft },
         accentSoftHover = mix { accentSoftHover },
         accentBorder = mix { accentBorder },
-        glow = mix { glow },
-        glowWarm = mix { glowWarm },
         danger = mix { danger },
         dangerHover = mix { dangerHover },
         dangerSoft = mix { dangerSoft },
