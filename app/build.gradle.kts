@@ -8,9 +8,12 @@ plugins {
     alias(libs.plugins.play.publisher)
 }
 
-// Accounts use the Firebase project in app/google-services.json; builds without it keep chats on the
-// device only, as the web app does when the server has no accounts.
-if (file("google-services.json").exists()) apply(plugin = "com.google.gms.google-services")
+// Accounts use the Firebase project in app/src/<build type>/google-services.json: dev for debug builds,
+// prod for release builds. Without them chats stay on the device only, as the web app does when the
+// server has no accounts.
+if (listOf("debug", "release").all { file("src/$it/google-services.json").exists() }) {
+    apply(plugin = "com.google.gms.google-services")
+}
 
 // release-please keeps the app version in version.txt.
 val appVersion = rootProject.file("version.txt").readText().trim()
@@ -19,11 +22,11 @@ val appVersion = rootProject.file("version.txt").readText().trim()
 // Firebase Auth emulator on this machine, through `adb reverse` (see `make e2e`).
 val e2e = providers.gradleProperty("homeoremedica.e2e").map { it != "false" }.getOrElse(false)
 
-// Point a build at another server with -Phomeoremedica.apiBaseUrl=http://10.0.2.2:8000
-val apiBaseUrl = providers.gradleProperty("homeoremedica.apiBaseUrl")
-    .orElse(if (e2e) "http://localhost:8100" else "https://homeoremedica-619837289655.asia-south1.run.app")
-    .get()
-    .trimEnd('/')
+// Debug builds use the dev server and release builds prod. Point a build at another server with
+// -Phomeoremedica.apiBaseUrl=http://10.0.2.2:8000
+val apiBaseUrlOverride = providers.gradleProperty("homeoremedica.apiBaseUrl").orNull
+    ?: if (e2e) "http://localhost:8100" else null
+fun apiBaseUrl(default: String) = "\"${(apiBaseUrlOverride ?: default).trimEnd('/')}\""
 
 // Release builds are signed with the Play upload key named in keystore.properties (see
 // keystore.properties.example); without the file they build unsigned.
@@ -43,7 +46,6 @@ android {
         // Play Publisher replaces this with the next code after Play's highest when publishing.
         versionCode = 1
         versionName = appVersion
-        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         buildConfigField("boolean", "E2E", "$e2e")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -67,7 +69,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "API_BASE_URL", apiBaseUrl("https://homeoremedica-119730286024.asia-south1.run.app"))
+        }
         release {
+            buildConfigField("String", "API_BASE_URL", apiBaseUrl("https://homeoremedica-619837289655.asia-south1.run.app"))
             signingConfig = signingConfigs.findByName("upload")
             isMinifyEnabled = true
             isShrinkResources = true
