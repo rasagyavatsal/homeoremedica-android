@@ -13,12 +13,14 @@ Requires JDK 17+ and the Android SDK (compileSdk 37); the Gradle wrapper fetches
 ./gradlew installDebug -Phomeoremedica.apiBaseUrl=http://10.0.2.2:8000
 ```
 
-Builds use the production server; the second command points one at `npm start` in homeoremedica-app
-from the emulator. Debug builds allow plain HTTP to `10.0.2.2` and `localhost` only.
+Debug builds use the dev server and Firebase project (`homeoremedica-dev-1`), release builds prod
+(`homeoremedica`); the second command points a build at `npm start` in homeoremedica-app from the
+emulator. Debug builds allow plain HTTP to `10.0.2.2` and `localhost` only.
 
-Accounts need `app/google-services.json`. Without it, chats stay on the device. To get it, add an
-Android app `com.rasagyavatsal.homeoremedica` to the Firebase project with the SHA-1s of the debug key,
-the upload key and Play's signing key, then download its `google-services.json` into `app/`.
+Accounts need `app/src/debug/google-services.json` (dev) and `app/src/release/google-services.json`
+(prod). Without them, chats stay on the device. Each comes from the Android app
+`com.rasagyavatsal.homeoremedica` in that Firebase project, registered with the SHA-1 of the debug key
+(dev), or of the upload key and Play's signing key (prod).
 
 ## Device
 
