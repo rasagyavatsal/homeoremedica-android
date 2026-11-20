@@ -23,7 +23,7 @@ val appVersion = rootProject.file("version.txt").readText().trim()
 val e2e = providers.gradleProperty("homeoremedica.e2e").map { it != "false" }.getOrElse(false)
 
 // Debug builds use the dev server and release builds prod. Point a build at another server with
-// -Phomeoremedica.apiBaseUrl=http://10.0.2.2:8000
+// -Phomeoremedica.apiBaseUrl=http://127.0.0.1:8000 after `adb reverse tcp:8000 tcp:8000` (see `make local`).
 val apiBaseUrlOverride = providers.gradleProperty("homeoremedica.apiBaseUrl").orNull
     ?: if (e2e) "http://localhost:8100" else null
 fun apiBaseUrl(default: String) = "\"${(apiBaseUrlOverride ?: default).trimEnd('/')}\""
