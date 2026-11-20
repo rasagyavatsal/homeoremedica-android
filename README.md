@@ -1,7 +1,8 @@
 # HomeoRemedica for Android
 
-Native Kotlin and Jetpack Compose client for [HomeoRemedica](https://github.com/rasagyavatsal/homeoremedica-app):
-the same books and cited answers as the web app, through its API. Historical reference only; not medical
+Native Kotlin and Jetpack Compose client for [HomeoRemedica](https://github.com/rasagyavatsal/homeoremedica-web):
+the same books and cited answers as the web app, through
+[its API](https://github.com/rasagyavatsal/homeoremedica-server). Historical reference only; not medical
 advice.
 
 ## Build
@@ -14,8 +15,8 @@ Requires JDK 17+ and the Android SDK (compileSdk 37); the Gradle wrapper fetches
 ```
 
 Debug builds use the dev server and Firebase project (`homeoremedica-dev-1`), release builds prod
-(`homeoremedica`); the second command points a build at `npm start` in homeoremedica-app from the
-emulator. Debug builds allow plain HTTP to `10.0.2.2` and `localhost` only.
+(`homeoremedica`); the second command points a build at `npm start` in homeoremedica-server from
+the emulator. Debug builds allow plain HTTP to `10.0.2.2` and `localhost` only.
 
 Accounts need `app/src/debug/google-services.json` (dev) and `app/src/release/google-services.json`
 (prod). Without them, chats stay on the device. Each comes from the Android app
@@ -35,9 +36,9 @@ make test         # unit tests
 make e2e          # end-to-end tests; TEST=ChatTest runs one class
 ```
 
-`make e2e` starts homeoremedica-app's e2e server and the Firebase emulators unless they are running,
-so it needs homeoremedica-app checked out beside this repository (or `APP_DIR`) with `npm install`, plus
-Node and Java. The device reaches them through `adb reverse`.
+`make e2e` starts homeoremedica-server's e2e server and the Firebase emulators unless they are running,
+so it needs homeoremedica-server checked out beside this repository (or `SERVER_DIR`) with `npm install`,
+plus Node and Java. The device reaches them through `adb reverse`.
 
 ### Remote emulator
 
