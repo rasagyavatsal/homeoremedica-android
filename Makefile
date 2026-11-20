@@ -6,10 +6,10 @@
 #     EMULATOR_HOST = user@192.168.1.20
 #
 # That machine runs the emulator as the systemd user service $(EMULATOR_SERVICE), with its adb port on 5555
-# (see "Remote emulator" in README.md). `make connect` starts the service if it's stopped, tunnels this
-# machine's port $(ADB_PORT) to it over SSH, and tunnels the emulator machine's port $(API_PORT) back here, so
-# 10.0.2.2:$(API_PORT) in the emulator reaches `npm start` on this machine. `make stop` shuts it down, as
-# does closing the window `make emu` opens.
+# (see "Remote emulator" in README.md). `make connect` starts the service if it's stopped and tunnels this
+# machine's port $(ADB_PORT) to it over SSH. `make stop` shuts it down, as does closing the window `make emu`
+# opens. `make local` forwards the device's port $(API_PORT) to this machine with `adb reverse`, so
+# 127.0.0.1:$(API_PORT) in the app reaches `npm start` here.
 
 -include local.mk
 
@@ -53,7 +53,7 @@ connect:
 ifneq ($(strip $(EMULATOR_HOST)),)
 	@ssh -S "$(TUNNEL)" -O check $(EMULATOR_HOST) 2>/dev/null || \
 	  ssh -f -N -M -S "$(TUNNEL)" -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 \
-	    -L $(ADB_PORT):127.0.0.1:5555 -R $(API_PORT):127.0.0.1:$(API_PORT) $(EMULATOR_HOST)
+	    -L $(ADB_PORT):127.0.0.1:5555 $(EMULATOR_HOST)
 	@ssh -S "$(TUNNEL)" $(EMULATOR_HOST) 'systemctl --user is-active -q $(EMULATOR_SERVICE) || \
 	  { echo "Starting the emulator on $$(hostname)"; systemctl --user start $(EMULATOR_SERVICE); }'
 	@adb connect $(SERIAL) >/dev/null 2>&1 || true
@@ -101,10 +101,12 @@ install: connect
 run: install
 	$(ADB) shell am start -W -n $(LAUNCH) >/dev/null
 
+# Not 10.0.2.2: Android 17 keeps apps that target it off the local network.
 local: connect
-	$(GRADLE) installDebug -Phomeoremedica.apiBaseUrl=http://10.0.2.2:$(API_PORT)
+	$(ADB) reverse tcp:$(API_PORT) tcp:$(API_PORT) >/dev/null
+	$(GRADLE) installDebug -Phomeoremedica.apiBaseUrl=http://127.0.0.1:$(API_PORT)
 	$(ADB) shell am start -W -n $(LAUNCH) >/dev/null
-	@echo "The app now uses http://10.0.2.2:$(API_PORT); start the server with npm start in ../homeoremedica-server."
+	@echo "The app now uses http://127.0.0.1:$(API_PORT); start the server with npm start in ../homeoremedica-server."
 
 restart:
 ifneq ($(strip $(EMULATOR_HOST)),)

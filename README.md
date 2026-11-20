@@ -11,12 +11,12 @@ Requires JDK 17+ and the Android SDK (compileSdk 37); the Gradle wrapper fetches
 
 ```sh
 ./gradlew testDebugUnitTest assembleDebug   # APK in app/build/outputs/apk/debug/
-./gradlew installDebug -Phomeoremedica.apiBaseUrl=http://10.0.2.2:8000
+adb reverse tcp:8000 tcp:8000 && ./gradlew installDebug -Phomeoremedica.apiBaseUrl=http://127.0.0.1:8000
 ```
 
 Debug builds use the dev server and Firebase project (`homeoremedica-dev-1`), release builds prod
 (`homeoremedica`); the second command points a build at `npm start` in homeoremedica-server from
-the emulator. Debug builds allow plain HTTP to `10.0.2.2` and `localhost` only.
+the device through `adb reverse`. Debug builds allow plain HTTP to `localhost` and `127.0.0.1` only.
 
 Accounts need `app/src/debug/google-services.json` (dev) and `app/src/release/google-services.json`
 (prod). Without them, chats stay on the device. Each comes from the Android app
@@ -57,8 +57,8 @@ Before its first boot, copy this machine's `~/.android/adbkey` and `adbkey.pub` 
 EMULATOR_HOST = user@192.168.1.20
 ```
 
-The make commands start it, tunnel adb over SSH and tunnel port 8000 back, so `10.0.2.2:8000` still
-reaches `npm start` here.
+The make commands start it and tunnel adb over SSH; `make local` still reaches `npm start` here through
+`adb reverse`.
 
 ```sh
 make connect      # connect adb without a window
