@@ -20,11 +20,20 @@ if [ ! -f "$server/e2e/server.ts" ]; then
   exit 1
 fi
 
-# Each job gets its own process group, so stopping it stops the processes it started too.
-set -m
+# From a terminal, each job gets its own process group, so stopping the group stops the processes it
+# started too. Without one (CI, a cloud session) there is no job control: the jobs share this script's
+# group and ignore SIGINT, so each job and the processes under it get SIGTERM instead. No `--` before
+# the group: dash, Linux's /bin/sh, rejects it.
+set -m 2>/dev/null || true
 jobs=
+descendants() { for child in $(pgrep -P "$1"); do echo "$child"; descendants "$child"; done; }
 stop() {
-  for job in $jobs; do kill -INT -- "-$job" 2>/dev/null || true; done
+  for job in $jobs; do
+    case $- in
+      *m*) kill -INT "-$job" 2>/dev/null || true ;;
+      *) kill -TERM "$job" $(descendants "$job") 2>/dev/null || true ;;
+    esac
+  done
   wait 2>/dev/null || true
 }
 trap stop EXIT
