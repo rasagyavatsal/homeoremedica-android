@@ -124,6 +124,10 @@ class FirebaseAuthClient private constructor(
 
         /** The end-to-end tests' accounts: the Auth emulator's demo project (e2e/scenario.ts), without Google sign-in. */
         private fun emulated(context: Context): FirebaseAuthClient {
+            // The emulator closes a connection idle for 5 s, and a request sent on it as it closes fails with
+            // "unexpected end of stream": likeliest when the device reaches it through a slow tunnel. Firebase
+            // Auth uses HttpURLConnection, which then opens a new connection for each request.
+            System.setProperty("http.keepAlive", "false")
             val existing = FirebaseApp.getApps(context).find { it.name == E2E_APP }
             val app = existing ?: FirebaseApp.initializeApp(
                 context,
