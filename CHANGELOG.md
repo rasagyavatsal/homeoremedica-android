@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.8.0](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.7.1...v3.8.0) (2026-11-23)
+
+
+### Features
+
+* ask off-topic questions without searching the books ([4992a46](https://github.com/rasagyavatsal/homeoremedica-android/commit/4992a46b9ab95ede19c3a0640c468c6e42aca4c2))
+
+
+### Bug Fixes
+
+* fail e2e.sh when the device drops mid-run ([9822973](https://github.com/rasagyavatsal/homeoremedica-android/commit/9822973590b37e18ebd581bea86a7f28a3e26e54)), closes [#28](https://github.com/rasagyavatsal/homeoremedica-android/issues/28)
+
 ## [3.7.1](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.7.0...v3.7.1) (2026-11-15)
 
 
