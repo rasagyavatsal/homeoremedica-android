@@ -254,8 +254,10 @@ class ChatViewModel(
             // Left null, the question is answered by the symptoms and diseases the server reads.
             var symptoms: List<String>? = null
             var diseases: List<String>? = null
+            var offTopic: Boolean? = null
             try {
-                if (api.readKind(asked) == QuestionKind.Case) {
+                val kind = api.readKind(asked)
+                if (kind == QuestionKind.Case) {
                     if (!current()) return@launchRequest
                     updateAnswer { it.copy(reading = Reading.Case) }
                     coroutineScope {
@@ -272,6 +274,7 @@ class ChatViewModel(
                     }
                 } else {
                     symptoms = emptyList()
+                    if (kind == QuestionKind.OffTopic) offTopic = true
                 }
             } catch (_: ApiException) {
                 // Without the symptoms to check, the question is still answered.
@@ -285,7 +288,7 @@ class ChatViewModel(
                 return@launchRequest
             }
             updateAnswer { it.copy(reading = null) }
-            answer(asked.copy(symptoms = symptoms, diseases = diseases), current)
+            answer(asked.copy(symptoms = symptoms, diseases = diseases, offTopic = offTopic), current)
         }
     }
 
@@ -338,6 +341,7 @@ class ChatViewModel(
                 question.summary,
                 question.symptoms,
                 question.diseases,
+                question.offTopic,
                 onSources = { sources -> if (current()) updateAnswer { it.copy(sources = sources) } },
                 onText = { piece -> if (current()) updateAnswer { it.copy(content = it.content + piece) } },
             )

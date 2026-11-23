@@ -74,10 +74,11 @@ class HomeoRemedicaApi(
         summary: String? = null,
         symptoms: List<String>? = null,
         diseases: List<String>? = null,
+        offTopic: Boolean? = null,
         onSources: (List<Citation>) -> Unit = {},
         onText: (String) -> Unit = {},
     ): ChatResponse {
-        val body = ApiJson.encodeToString(ChatRequest(message, history, summary, symptoms, diseases)).toRequestBody(JSON)
+        val body = ApiJson.encodeToString(ChatRequest(message, history, summary, symptoms, diseases, offTopic)).toRequestBody(JSON)
         val request = Request.Builder()
             .url("$baseUrl/api/chat")
             .header("Accept", "text/event-stream")

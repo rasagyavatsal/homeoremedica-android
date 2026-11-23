@@ -69,4 +69,23 @@ if ! up http://127.0.0.1:8100/api/health; then
 fi
 
 for port in 8100 9099; do adb reverse "tcp:$port" "tcp:$port" >/dev/null; done
+results=app/build/outputs/androidTest-results/connected
+rm -rf "$results"
 ./gradlew connectedDebugAndroidTest -Phomeoremedica.e2e "$@"
+
+# Gradle reports success when the device drops mid-run, so check the results and the device too.
+ok=true
+if [ "$(adb get-state 2>/dev/null || true)" != device ]; then
+  echo "The device went offline during the tests." >&2
+  ok=false
+fi
+if ! find "$results" -name 'TEST-*.xml' 2>/dev/null | grep -q .; then
+  echo "The tests wrote no results to $results." >&2
+  ok=false
+fi
+failed=$(find "$results" -name 'TEST-*.xml' -exec grep -lE '(failures|errors)="[1-9]' {} + 2>/dev/null || true)
+if [ -n "$failed" ]; then
+  echo "The test run failed or stopped early; see $failed" >&2
+  ok=false
+fi
+$ok

@@ -46,6 +46,9 @@ class ChatViewModelTest {
     /** What the server reads from a question; null when it describes no case. */
     @Volatile
     private var case: Case? = null
+    /** Whether the server finds a question that is no case off-topic. */
+    @Volatile
+    private var offTopic = false
 
     /** A case's symptoms and diseases as the server reads them; a null list could not be read. */
     private class Case(val symptoms: List<String>?, val diseases: List<String>?)
@@ -58,7 +61,7 @@ class ChatViewModelTest {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         server.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse = when (request.path) {
-                "/api/kind" -> json("""{"kind":"${if (case != null) "case" else "question"}"}""")
+                "/api/kind" -> json("""{"kind":"${if (case != null) "case" else if (offTopic) "off-topic" else "question"}"}""")
                 "/api/symptoms" -> case?.symptoms?.let { json("""{"symptoms":${ApiJson.encodeToString(it)}}""") } ?: unavailable
                 "/api/diseases" -> case?.diseases?.let { json("""{"diseases":${ApiJson.encodeToString(it)}}""") } ?: unavailable
                 else -> {
@@ -220,6 +223,26 @@ class ChatViewModelTest {
         vm.settled()
         assertEquals(listOf("Mind: weeping"), chatRequests.single().symptoms)
         assertNull(chatRequests.single().diseases)
+    }
+
+    @Test
+    fun asksAnOffTopicQuestionWithoutSearchingTheBooks() = runTest {
+        offTopic = true
+        val vm = viewModel()
+        answer("No passages in the corpus matched this question.", emptyList())
+        vm.submit("What is the capital of France?")
+        assertEquals("No passages in the corpus matched this question.", vm.settled().messages.last().content)
+        assertEquals(true, chatRequests.single().offTopic)
+        assertEquals(emptyList<String>(), chatRequests.single().symptoms)
+    }
+
+    @Test
+    fun asksAQuestionWithoutTheOffTopicFlag() = runTest {
+        val vm = viewModel()
+        answer("Sulphur.", emptyList())
+        vm.submit("What is Sulphur?")
+        vm.settled()
+        assertNull(chatRequests.single().offTopic)
     }
 
     @Test
