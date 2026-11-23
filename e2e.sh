@@ -20,11 +20,20 @@ if [ ! -f "$server/e2e/server.ts" ]; then
   exit 1
 fi
 
-# Each job gets its own process group, so stopping it stops the processes it started too.
-set -m
+# From a terminal, each job gets its own process group, so stopping the group stops the processes it
+# started too. Without one (CI, a cloud session) there is no job control: the jobs share this script's
+# group and ignore SIGINT, so each job and the processes under it get SIGTERM instead. No `--` before
+# the group: dash, Linux's /bin/sh, rejects it.
+set -m 2>/dev/null || true
 jobs=
+descendants() { for child in $(pgrep -P "$1"); do echo "$child"; descendants "$child"; done; }
 stop() {
-  for job in $jobs; do kill -INT -- "-$job" 2>/dev/null || true; done
+  for job in $jobs; do
+    case $- in
+      *m*) kill -INT "-$job" 2>/dev/null || true ;;
+      *) kill -TERM "$job" $(descendants "$job") 2>/dev/null || true ;;
+    esac
+  done
   wait 2>/dev/null || true
 }
 trap stop EXIT
@@ -43,9 +52,10 @@ await() {
 
 if ! up http://127.0.0.1:9099/; then
   echo "Starting the Firebase emulators"
-  # The Firestore emulator needs Java.
-  (cd "$server" && exec npx --yes firebase-tools@15.32.1 emulators:start --config e2e/firebase.json \
-    --project demo-homeoremedica --only auth,firestore) >"$logs/emulators.log" 2>&1 &
+  # The Firestore emulator needs Java. e2e-keep-alive.cjs explains itself.
+  keep_alive="$PWD/e2e-keep-alive.cjs"
+  (cd "$server" && NODE_OPTIONS="--require \"$keep_alive\"" exec npx --yes firebase-tools@15.32.1 \
+    emulators:start --config e2e/firebase.json --project demo-homeoremedica --only auth,firestore) >"$logs/emulators.log" 2>&1 &
   jobs="$jobs $!"
   await http://127.0.0.1:9099/ "The Firebase Auth emulator"
   await http://127.0.0.1:8086/ "The Firestore emulator"
