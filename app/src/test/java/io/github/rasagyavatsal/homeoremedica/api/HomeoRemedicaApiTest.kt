@@ -81,6 +81,22 @@ class HomeoRemedicaApiTest {
     }
 
     @Test
+    fun sendsTheOffTopicFlag() = runTest {
+        server.enqueue(stream("done" to done))
+        api.sendMessage("What is the capital of France?", emptyList(), symptoms = emptyList(), offTopic = true)
+        assertEquals(
+            """{"message":"What is the capital of France?","history":[],"symptoms":[],"offTopic":true}""",
+            server.takeRequest().body.readUtf8(),
+        )
+    }
+
+    @Test
+    fun readsAnOffTopicQuestion() = runTest {
+        server.enqueue(MockResponse().setBody("""{"kind":"off-topic"}"""))
+        assertEquals(QuestionKind.OffTopic, api.readKind(ChatRequest("What is the capital of France?", emptyList())))
+    }
+
+    @Test
     fun readsWhatAQuestionDescribesBeforeItIsAsked() = runTest {
         val question = ChatRequest("A weepy child.", emptyList())
         server.enqueue(MockResponse().setBody("""{"kind":"case"}"""))

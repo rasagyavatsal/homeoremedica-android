@@ -37,13 +37,19 @@ data class ChatRequest(
     val symptoms: List<String>? = null,
     /** The case's diseases as the user confirmed them, ranked by in place of the server's own. */
     val diseases: List<String>? = null,
+    /** Set when `/api/kind` found the question off-topic, so the books are not searched for it. */
+    val offTopic: Boolean? = null,
 )
 
-/** Whether a question describes a patient, whose symptoms are read, or asks about anything else. */
+/**
+ * Whether a question describes a patient, whose symptoms are read, asks about anything else the books
+ * could answer, or has nothing to do with homoeopathy, medicine or a patient.
+ */
 @Serializable
 enum class QuestionKind {
     @SerialName("case") Case,
     @SerialName("question") Question,
+    @SerialName("off-topic") OffTopic,
 }
 
 /** `POST /api/kind`: decided before a question is answered, so only a case is read for symptoms. */
