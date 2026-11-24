@@ -56,7 +56,7 @@ import io.github.rasagyavatsal.homeoremedica.ui.theme.Theme
 // Ports the web app's case review (src/web/CaseReview.tsx).
 
 // The server's limits on a case's symptoms and diseases.
-private const val MAX_SYMPTOMS = 15
+private const val MAX_SYMPTOMS = 100
 private const val MAX_SYMPTOM_CHARS = 200
 private const val MAX_DISEASES = 15
 private const val MAX_DISEASE_CHARS = 200
