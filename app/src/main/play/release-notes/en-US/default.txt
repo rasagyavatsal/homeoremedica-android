@@ -1,6 +1,2 @@
-What's new in 3.7
-- A new look: the name and a time-of-day greeting written out in serif, and a new italic H icon
-- Check the symptoms and diseases taken from a case before it's answered
-- References sit in one row and open their source passages
-- Delete chats from a long-press menu, with undo
-- Fixes for Google sign-in and citation links
+What's new in 3.8
+- Questions that aren't about homeopathy get a direct answer, without unrelated passages shown as sources
