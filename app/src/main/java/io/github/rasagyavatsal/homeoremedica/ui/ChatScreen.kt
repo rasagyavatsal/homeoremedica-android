@@ -552,7 +552,6 @@ private fun Reply(
         streaming && message.content.isEmpty() -> Progress(
             when {
                 message.sources != null -> "Reading the passages…"
-                message.reading -> "Reading your question…"
                 else -> "Searching the books…"
             },
             modifier,

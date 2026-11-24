@@ -34,8 +34,6 @@ data class Message(
     /** Null once an answer is complete. */
     val status: MessageStatus? = null,
     val error: String? = null,
-    /** Whether a streaming answer waits on its question being sorted, before the books are searched. */
-    val reading: Boolean = false,
 )
 
 /** The messages worth keeping: failed questions and their errors are left out. */

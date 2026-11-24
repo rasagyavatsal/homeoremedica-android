@@ -38,30 +38,25 @@ class ChatViewModelTest {
     private val server = MockWebServer()
     private val chatResponses = LinkedBlockingQueue<MockResponse>()
     private val chatRequests = mutableListOf<ChatRequest>()
+    /** The path of every request the server was sent. */
+    private val paths = mutableListOf<String>()
     private val library = MemoryLibrary()
     private val lastChat = MemoryLastChat()
     private var now = 1_000L
     private var ids = 0
     private val viewModels = mutableListOf<ChatViewModel>()
-    /** Whether the server finds a question a case. */
-    @Volatile
-    private var case = false
-    /** Whether the server finds a question that is no case off-topic. */
-    @Volatile
-    private var offTopic = false
-
     private fun json(body: String) = MockResponse().setHeader("Content-Type", "application/json").setBody(body)
 
     @Before
     fun start() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         server.dispatcher = object : Dispatcher() {
-            override fun dispatch(request: RecordedRequest): MockResponse = when (request.path) {
-                "/api/kind" -> json("""{"kind":"${if (case) "case" else if (offTopic) "off-topic" else "question"}"}""")
-                else -> {
-                    synchronized(chatRequests) { chatRequests += ApiJson.decodeFromString<ChatRequest>(request.body.readUtf8()) }
-                    chatResponses.take()
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                synchronized(chatRequests) {
+                    paths += request.path.orEmpty()
+                    chatRequests += ApiJson.decodeFromString<ChatRequest>(request.body.readUtf8())
                 }
+                return chatResponses.take()
             }
         }
         server.start()
@@ -184,38 +179,16 @@ class ChatViewModelTest {
     }
 
     @Test
-    fun answersACaseAtOnce() = runTest {
-        case = true
+    fun sendsTheQuestionStraightToTheChat() = runTest {
         val vm = viewModel()
         answer("Pulsatilla.", emptyList())
         vm.submit("A weepy, thirstless child with measles.")
-        val state = vm.settled()
-        assertEquals("Pulsatilla.", state.messages.last().content)
-        assertNull(chatRequests.single().offTopic)
-    }
-
-    @Test
-    fun asksAnOffTopicQuestionWithoutSearchingTheBooks() = runTest {
-        offTopic = true
-        val vm = viewModel()
-        answer("No passages in the corpus matched this question.", emptyList())
-        vm.submit("What is the capital of France?")
-        assertEquals("No passages in the corpus matched this question.", vm.settled().messages.last().content)
-        assertEquals(true, chatRequests.single().offTopic)
-    }
-
-    @Test
-    fun asksAQuestionWithoutTheOffTopicFlag() = runTest {
-        val vm = viewModel()
-        answer("Sulphur.", emptyList())
-        vm.submit("What is Sulphur?")
-        vm.settled()
-        assertNull(chatRequests.single().offTopic)
+        assertEquals("Pulsatilla.", vm.settled().messages.last().content)
+        assertEquals(listOf("/api/chat"), paths)
     }
 
     @Test
     fun asksAFailedCaseAgain() = runTest {
-        case = true
         val vm = viewModel()
         chatResponses += MockResponse().setResponseCode(429).setBody("""{"detail":"Too many questions."}""")
         vm.submit("A weepy child.")

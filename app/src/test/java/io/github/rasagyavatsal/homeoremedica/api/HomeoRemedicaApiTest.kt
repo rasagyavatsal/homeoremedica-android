@@ -71,29 +71,6 @@ class HomeoRemedicaApiTest {
     }
 
     @Test
-    fun sendsTheOffTopicFlag() = runTest {
-        server.enqueue(stream("done" to done))
-        api.sendMessage("What is the capital of France?", emptyList(), offTopic = true)
-        assertEquals(
-            """{"message":"What is the capital of France?","history":[],"offTopic":true}""",
-            server.takeRequest().body.readUtf8(),
-        )
-    }
-
-    @Test
-    fun readsAnOffTopicQuestion() = runTest {
-        server.enqueue(MockResponse().setBody("""{"kind":"off-topic"}"""))
-        assertEquals(QuestionKind.OffTopic, api.readKind(ChatRequest("What is the capital of France?", emptyList())))
-    }
-
-    @Test
-    fun readsWhatAQuestionDescribesBeforeItIsAsked() = runTest {
-        server.enqueue(MockResponse().setBody("""{"kind":"case"}"""))
-        assertEquals(QuestionKind.Case, api.readKind(ChatRequest("A weepy child.", emptyList())))
-        assertEquals("/api/kind", server.takeRequest().path)
-    }
-
-    @Test
     fun acceptsAResponseThatDoesNotStream() = runTest {
         server.enqueue(MockResponse().setHeader("Content-Type", "application/json").setBody(done))
         assertEquals("Mild [1].", api.sendMessage("Pulsatilla?", emptyList()).answer)

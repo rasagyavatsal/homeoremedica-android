@@ -49,25 +49,15 @@ class HomeoRemedicaApi(
 ) {
     private val baseUrl = baseUrl.trimEnd('/')
 
-    /** Whether [question] describes a patient, asks about anything else, or is off-topic. */
-    suspend fun readKind(question: ChatRequest): QuestionKind = beforeAsking<KindResponse>("kind", question).kind
-
-    /** What the server makes of [question] before it is asked. */
-    private suspend inline fun <reified T> beforeAsking(path: String, question: ChatRequest): T {
-        val request = Request.Builder().url("$baseUrl/api/$path").post(ApiJson.encodeToString(question).toRequestBody(JSON)).build()
-        return client.newCall(request).await { readResponse<T>(it) }
-    }
-
     /** Ask a question, reporting sources and answer text as the server streams them. */
     suspend fun sendMessage(
         message: String,
         history: List<ChatTurn>,
         summary: String? = null,
-        offTopic: Boolean? = null,
         onSources: (List<Citation>) -> Unit = {},
         onText: (String) -> Unit = {},
     ): ChatResponse {
-        val body = ApiJson.encodeToString(ChatRequest(message, history, summary, offTopic)).toRequestBody(JSON)
+        val body = ApiJson.encodeToString(ChatRequest(message, history, summary)).toRequestBody(JSON)
         val request = Request.Builder()
             .url("$baseUrl/api/chat")
             .header("Accept", "text/event-stream")

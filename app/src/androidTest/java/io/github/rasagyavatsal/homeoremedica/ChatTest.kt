@@ -7,7 +7,6 @@ import io.github.rasagyavatsal.homeoremedica.robots.start
 import io.github.rasagyavatsal.homeoremedica.support.ANSWER
 import io.github.rasagyavatsal.homeoremedica.support.AppRule
 import io.github.rasagyavatsal.homeoremedica.support.BRYONIA_PASSAGE
-import io.github.rasagyavatsal.homeoremedica.support.CASE
 import io.github.rasagyavatsal.homeoremedica.support.CHAT_LIMIT
 import io.github.rasagyavatsal.homeoremedica.support.FAIL_ONCE
 import io.github.rasagyavatsal.homeoremedica.support.NUX_VOMICA_PASSAGE
@@ -61,15 +60,6 @@ class ChatTest {
             offersRetry()
             retry()
             waitForAnswer()
-            seesAnswer(ANSWER)
-        }
-    }
-
-    @Test
-    fun answersACaseWithoutAReview() {
-        app.start()
-        app.chat {
-            askAndWait("a weepy, thirstless child $CASE")
             seesAnswer(ANSWER)
         }
     }

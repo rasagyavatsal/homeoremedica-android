@@ -12,7 +12,6 @@ import io.github.rasagyavatsal.homeoremedica.api.ChatResponse
 import io.github.rasagyavatsal.homeoremedica.api.ChatTurn
 import io.github.rasagyavatsal.homeoremedica.api.GENERIC_ERROR
 import io.github.rasagyavatsal.homeoremedica.api.HomeoRemedicaApi
-import io.github.rasagyavatsal.homeoremedica.api.QuestionKind
 import io.github.rasagyavatsal.homeoremedica.api.Role
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineStart
@@ -242,25 +241,14 @@ class ChatViewModel(
                 draft = "",
                 messages = it.messages + listOf(
                     Message(next, Role.User, question),
-                    Message(next + 1, Role.Assistant, "", status = MessageStatus.Streaming, reading = true),
+                    Message(next + 1, Role.Assistant, "", status = MessageStatus.Streaming),
                 ),
             )
         }
         lastChat.set(start.id)
 
         val asked = ChatRequest(question, start.history, start.summary)
-        launchRequest { current ->
-            // Unsorted, the question is searched for.
-            val kind = try {
-                api.readKind(asked)
-            } catch (_: ApiException) {
-                null
-            }
-            if (!current()) return@launchRequest
-            updateAnswer { it.copy(reading = false) }
-            // An off-topic question is not searched for at all.
-            answer(asked.copy(offTopic = if (kind == QuestionKind.OffTopic) true else null), current)
-        }
+        launchRequest { current -> answer(asked, current) }
     }
 
     /** Ask the failed question at the end of the chat again. */
@@ -290,7 +278,6 @@ class ChatViewModel(
                 question.message,
                 question.history,
                 question.summary,
-                question.offTopic,
                 onSources = { sources -> if (current()) updateAnswer { it.copy(sources = sources) } },
                 onText = { piece -> if (current()) updateAnswer { it.copy(content = it.content + piece) } },
             )

@@ -33,24 +33,7 @@ data class ChatRequest(
     val history: List<ChatTurn>,
     /** What the server condensed the chat's earlier turns into. */
     val summary: String? = null,
-    /** Set when `/api/kind` found the question off-topic, so the books are not searched for it. */
-    val offTopic: Boolean? = null,
 )
-
-/**
- * Whether a question describes a patient, asks about anything else the books
- * could answer, or has nothing to do with homoeopathy, medicine or a patient.
- */
-@Serializable
-enum class QuestionKind {
-    @SerialName("case") Case,
-    @SerialName("question") Question,
-    @SerialName("off-topic") OffTopic,
-}
-
-/** `POST /api/kind`: decided before a question is answered, so only a case is searched for in the repertories. */
-@Serializable
-data class KindResponse(val kind: QuestionKind)
 
 /** `POST /api/chat`: the answer plus the trimmed history and the summary to send with the next question. */
 @Serializable
