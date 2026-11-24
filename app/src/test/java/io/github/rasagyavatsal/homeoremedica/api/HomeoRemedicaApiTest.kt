@@ -73,9 +73,9 @@ class HomeoRemedicaApiTest {
     @Test
     fun sendsTheOffTopicFlag() = runTest {
         server.enqueue(stream("done" to done))
-        api.sendMessage("What is the capital of France?", emptyList(), symptoms = emptyList(), offTopic = true)
+        api.sendMessage("What is the capital of France?", emptyList(), offTopic = true)
         assertEquals(
-            """{"message":"What is the capital of France?","history":[],"symptoms":[],"offTopic":true}""",
+            """{"message":"What is the capital of France?","history":[],"offTopic":true}""",
             server.takeRequest().body.readUtf8(),
         )
     }

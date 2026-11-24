@@ -184,14 +184,13 @@ class ChatViewModelTest {
     }
 
     @Test
-    fun answersACaseAtOnceLeavingItsSymptomsToTheServer() = runTest {
+    fun answersACaseAtOnce() = runTest {
         case = true
         val vm = viewModel()
         answer("Pulsatilla.", emptyList())
         vm.submit("A weepy, thirstless child with measles.")
         val state = vm.settled()
         assertEquals("Pulsatilla.", state.messages.last().content)
-        assertNull(chatRequests.single().symptoms)
         assertNull(chatRequests.single().offTopic)
     }
 
@@ -203,7 +202,6 @@ class ChatViewModelTest {
         vm.submit("What is the capital of France?")
         assertEquals("No passages in the corpus matched this question.", vm.settled().messages.last().content)
         assertEquals(true, chatRequests.single().offTopic)
-        assertEquals(emptyList<String>(), chatRequests.single().symptoms)
     }
 
     @Test
@@ -213,15 +211,6 @@ class ChatViewModelTest {
         vm.submit("What is Sulphur?")
         vm.settled()
         assertNull(chatRequests.single().offTopic)
-    }
-
-    @Test
-    fun answersAQuestionThatDescribesNoPatientWithoutSymptoms() = runTest {
-        val vm = viewModel()
-        answer("Sulphur.", emptyList())
-        vm.submit("What is Sulphur?")
-        vm.settled()
-        assertEquals(emptyList<String>(), chatRequests.single().symptoms)
     }
 
     @Test

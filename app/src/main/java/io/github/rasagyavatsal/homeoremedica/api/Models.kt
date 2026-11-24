@@ -33,8 +33,6 @@ data class ChatRequest(
     val history: List<ChatTurn>,
     /** What the server condensed the chat's earlier turns into. */
     val summary: String? = null,
-    /** Empty when `/api/kind` found the question describes no patient, so the repertories are not searched for it. */
-    val symptoms: List<String>? = null,
     /** Set when `/api/kind` found the question off-topic, so the books are not searched for it. */
     val offTopic: Boolean? = null,
 )

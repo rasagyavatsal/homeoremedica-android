@@ -250,7 +250,7 @@ class ChatViewModel(
 
         val asked = ChatRequest(question, start.history, start.summary)
         launchRequest { current ->
-            // Unsorted, the question is answered as a case is.
+            // Unsorted, the question is searched for.
             val kind = try {
                 api.readKind(asked)
             } catch (_: ApiException) {
@@ -258,10 +258,8 @@ class ChatViewModel(
             }
             if (!current()) return@launchRequest
             updateAnswer { it.copy(reading = false) }
-            // A question that describes no patient has no symptoms to search the repertories by, and an
-            // off-topic one is not searched for at all.
-            val unread = kind != null && kind != QuestionKind.Case
-            answer(asked.copy(symptoms = if (unread) emptyList() else null, offTopic = if (kind == QuestionKind.OffTopic) true else null), current)
+            // An off-topic question is not searched for at all.
+            answer(asked.copy(offTopic = if (kind == QuestionKind.OffTopic) true else null), current)
         }
     }
 
@@ -292,7 +290,6 @@ class ChatViewModel(
                 question.message,
                 question.history,
                 question.summary,
-                question.symptoms,
                 question.offTopic,
                 onSources = { sources -> if (current()) updateAnswer { it.copy(sources = sources) } },
                 onText = { piece -> if (current()) updateAnswer { it.copy(content = it.content + piece) } },

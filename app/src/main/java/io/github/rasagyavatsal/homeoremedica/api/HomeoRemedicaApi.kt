@@ -58,20 +58,16 @@ class HomeoRemedicaApi(
         return client.newCall(request).await { readResponse<T>(it) }
     }
 
-    /**
-     * Ask a question, reporting sources and answer text as the server streams them. A case is answered by
-     * the symptoms the server reads from it, unless [symptoms] is empty.
-     */
+    /** Ask a question, reporting sources and answer text as the server streams them. */
     suspend fun sendMessage(
         message: String,
         history: List<ChatTurn>,
         summary: String? = null,
-        symptoms: List<String>? = null,
         offTopic: Boolean? = null,
         onSources: (List<Citation>) -> Unit = {},
         onText: (String) -> Unit = {},
     ): ChatResponse {
-        val body = ApiJson.encodeToString(ChatRequest(message, history, summary, symptoms, offTopic)).toRequestBody(JSON)
+        val body = ApiJson.encodeToString(ChatRequest(message, history, summary, offTopic)).toRequestBody(JSON)
         val request = Request.Builder()
             .url("$baseUrl/api/chat")
             .header("Accept", "text/event-stream")
