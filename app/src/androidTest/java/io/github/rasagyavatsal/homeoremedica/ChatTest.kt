@@ -8,7 +8,6 @@ import io.github.rasagyavatsal.homeoremedica.support.ANSWER
 import io.github.rasagyavatsal.homeoremedica.support.AppRule
 import io.github.rasagyavatsal.homeoremedica.support.BRYONIA_PASSAGE
 import io.github.rasagyavatsal.homeoremedica.support.CASE
-import io.github.rasagyavatsal.homeoremedica.support.CASE_SYMPTOMS
 import io.github.rasagyavatsal.homeoremedica.support.CHAT_LIMIT
 import io.github.rasagyavatsal.homeoremedica.support.FAIL_ONCE
 import io.github.rasagyavatsal.homeoremedica.support.NUX_VOMICA_PASSAGE
@@ -67,16 +66,10 @@ class ChatTest {
     }
 
     @Test
-    fun reviewsACasesSymptomsAndDiseasesBeforeItIsAnswered() {
+    fun answersACaseWithoutAReview() {
         app.start()
         app.chat {
-            ask("a weepy, thirstless child $CASE")
-            CASE_SYMPTOMS.forEachIndexed { index, symptom -> seesSymptom(index + 1, symptom) }
-            removeSymptom(1)
-            seesSymptom(1, CASE_SYMPTOMS[1])
-            addDisease("Measles")
-            confirmCase()
-            waitForAnswer()
+            askAndWait("a weepy, thirstless child $CASE")
             seesAnswer(ANSWER)
         }
     }

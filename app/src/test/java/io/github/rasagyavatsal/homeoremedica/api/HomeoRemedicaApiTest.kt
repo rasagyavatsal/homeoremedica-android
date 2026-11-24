@@ -71,16 +71,6 @@ class HomeoRemedicaApiTest {
     }
 
     @Test
-    fun sendsTheSymptomsAndDiseasesTheUserConfirmed() = runTest {
-        server.enqueue(stream("done" to done))
-        api.sendMessage("A weepy child.", emptyList(), symptoms = listOf("Mind: weeping"), diseases = emptyList())
-        assertEquals(
-            """{"message":"A weepy child.","history":[],"symptoms":["Mind: weeping"],"diseases":[]}""",
-            server.takeRequest().body.readUtf8(),
-        )
-    }
-
-    @Test
     fun sendsTheOffTopicFlag() = runTest {
         server.enqueue(stream("done" to done))
         api.sendMessage("What is the capital of France?", emptyList(), symptoms = emptyList(), offTopic = true)
@@ -98,15 +88,9 @@ class HomeoRemedicaApiTest {
 
     @Test
     fun readsWhatAQuestionDescribesBeforeItIsAsked() = runTest {
-        val question = ChatRequest("A weepy child.", emptyList())
         server.enqueue(MockResponse().setBody("""{"kind":"case"}"""))
-        server.enqueue(MockResponse().setBody("""{"symptoms":["Mind: weeping"]}"""))
-        server.enqueue(MockResponse().setBody("""{"diseases":["Measles"]}"""))
-
-        assertEquals(QuestionKind.Case, api.readKind(question))
-        assertEquals(listOf("Mind: weeping"), api.readSymptoms(question))
-        assertEquals(listOf("Measles"), api.readDiseases(question))
-        assertEquals(listOf("/api/kind", "/api/symptoms", "/api/diseases"), List(3) { server.takeRequest() }.map { it.path })
+        assertEquals(QuestionKind.Case, api.readKind(ChatRequest("A weepy child.", emptyList())))
+        assertEquals("/api/kind", server.takeRequest().path)
     }
 
     @Test

@@ -43,27 +43,21 @@ class ChatViewModelTest {
     private var now = 1_000L
     private var ids = 0
     private val viewModels = mutableListOf<ChatViewModel>()
-    /** What the server reads from a question; null when it describes no case. */
+    /** Whether the server finds a question a case. */
     @Volatile
-    private var case: Case? = null
+    private var case = false
     /** Whether the server finds a question that is no case off-topic. */
     @Volatile
     private var offTopic = false
 
-    /** A case's symptoms and diseases as the server reads them; a null list could not be read. */
-    private class Case(val symptoms: List<String>?, val diseases: List<String>?)
-
     private fun json(body: String) = MockResponse().setHeader("Content-Type", "application/json").setBody(body)
-    private val unavailable get() = MockResponse().setResponseCode(503).setBody("""{"detail":"Unavailable."}""")
 
     @Before
     fun start() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         server.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse = when (request.path) {
-                "/api/kind" -> json("""{"kind":"${if (case != null) "case" else if (offTopic) "off-topic" else "question"}"}""")
-                "/api/symptoms" -> case?.symptoms?.let { json("""{"symptoms":${ApiJson.encodeToString(it)}}""") } ?: unavailable
-                "/api/diseases" -> case?.diseases?.let { json("""{"diseases":${ApiJson.encodeToString(it)}}""") } ?: unavailable
+                "/api/kind" -> json("""{"kind":"${if (case) "case" else if (offTopic) "off-topic" else "question"}"}""")
                 else -> {
                     synchronized(chatRequests) { chatRequests += ApiJson.decodeFromString<ChatRequest>(request.body.readUtf8()) }
                     chatResponses.take()
@@ -189,40 +183,16 @@ class ChatViewModelTest {
         assertEquals(listOf("Pulsatilla?", "Mild"), library.awaitSaved { it.isNotEmpty() }.single().messages.map { it.content })
     }
 
-    private suspend fun ChatViewModel.underReview() = state.first { it.messages.lastOrNull()?.status == MessageStatus.Review }
-
     @Test
-    fun answersACaseByTheSymptomsAndDiseasesTheUserConfirmed() = runTest {
-        case = Case(listOf("Mind: weeping", "Stomach: thirstless"), listOf("Measles"))
+    fun answersACaseAtOnceLeavingItsSymptomsToTheServer() = runTest {
+        case = true
         val vm = viewModel()
-        vm.submit("A weepy, thirstless child with measles.")
-        val review = vm.underReview()
-        assertTrue(review.busy)
-        assertEquals(listOf("Mind: weeping", "Stomach: thirstless"), review.messages.last().symptoms)
-        assertEquals(listOf("Measles"), review.messages.last().diseases)
-        assertTrue(chatRequests.isEmpty())
-
         answer("Pulsatilla.", emptyList())
-        vm.confirm(listOf("Mind: weeping"), emptyList())
+        vm.submit("A weepy, thirstless child with measles.")
         val state = vm.settled()
         assertEquals("Pulsatilla.", state.messages.last().content)
-        assertNull(state.messages.last().symptoms)
-        assertEquals(listOf("Mind: weeping"), chatRequests.single().symptoms)
-        assertEquals(emptyList<String>(), chatRequests.single().diseases)
-    }
-
-    @Test
-    fun reviewsTheSymptomsAloneWhenTheDiseasesCannotBeRead() = runTest {
-        case = Case(listOf("Mind: weeping"), diseases = null)
-        val vm = viewModel()
-        vm.submit("A weepy child.")
-        assertNull(vm.underReview().messages.last().diseases)
-
-        answer("Pulsatilla.", emptyList())
-        vm.confirm(listOf("Mind: weeping"))
-        vm.settled()
-        assertEquals(listOf("Mind: weeping"), chatRequests.single().symptoms)
-        assertNull(chatRequests.single().diseases)
+        assertNull(chatRequests.single().symptoms)
+        assertNull(chatRequests.single().offTopic)
     }
 
     @Test
@@ -246,45 +216,26 @@ class ChatViewModelTest {
     }
 
     @Test
-    fun answersWithoutAReviewWhenTheSymptomsCannotBeRead() = runTest {
-        case = Case(symptoms = null, diseases = listOf("Measles"))
+    fun answersAQuestionThatDescribesNoPatientWithoutSymptoms() = runTest {
         val vm = viewModel()
-        answer("Pulsatilla.", emptyList())
-        vm.submit("A weepy child.")
-        assertEquals("Pulsatilla.", vm.settled().messages.last().content)
-        assertNull(chatRequests.single().symptoms)
-        assertNull(chatRequests.single().diseases)
+        answer("Sulphur.", emptyList())
+        vm.submit("What is Sulphur?")
+        vm.settled()
+        assertEquals(emptyList<String>(), chatRequests.single().symptoms)
     }
 
     @Test
-    fun asksAFailedCaseAgainByWhatWasConfirmed() = runTest {
-        case = Case(listOf("Mind: weeping"), listOf("Measles"))
+    fun asksAFailedCaseAgain() = runTest {
+        case = true
         val vm = viewModel()
-        vm.submit("A weepy child.")
-        vm.underReview()
         chatResponses += MockResponse().setResponseCode(429).setBody("""{"detail":"Too many questions."}""")
-        vm.confirm(listOf("Mind: tearful"), listOf("Measles"))
+        vm.submit("A weepy child.")
         assertEquals(MessageStatus.Error, vm.settled().messages.last().status)
 
         answer("Pulsatilla.", emptyList())
         vm.retry()
         assertEquals("Pulsatilla.", vm.settled().messages.last().content)
-        assertEquals(listOf(listOf("Mind: tearful"), listOf("Mind: tearful")), chatRequests.map { it.symptoms })
-    }
-
-    @Test
-    fun stopsACaseUnderReview() = runTest {
-        case = Case(listOf("Mind: weeping"), emptyList())
-        val vm = viewModel()
-        vm.submit("A weepy child.")
-        vm.underReview()
-
-        vm.stop()
-        val state = vm.state.value
-        assertFalse(state.busy)
-        assertEquals(MessageStatus.Stopped, state.messages.last().status)
-        assertNull(state.messages.last().symptoms)
-        assertTrue(chatRequests.isEmpty())
+        assertEquals(listOf("A weepy child.", "A weepy child."), chatRequests.map { it.message })
     }
 
     private suspend fun ChatViewModel.ask(question: String, reply: String) {

@@ -20,7 +20,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -64,8 +63,8 @@ data class ChatState(
     /** Whether answers can be rated, which needs a verified account. */
     val canRate: Boolean = false,
 ) {
-    /** Whether the last answer is still streaming, or waits for the user to check its case. */
-    val busy: Boolean get() = messages.lastOrNull()?.status.let { it == MessageStatus.Streaming || it == MessageStatus.Review }
+    /** Whether the last answer is still streaming. */
+    val busy: Boolean get() = messages.lastOrNull()?.status == MessageStatus.Streaming
 }
 
 // Ports the web app's chat hook (src/web/useChat.ts) and its saved chats (src/web/App.tsx).
@@ -243,7 +242,7 @@ class ChatViewModel(
                 draft = "",
                 messages = it.messages + listOf(
                     Message(next, Role.User, question),
-                    Message(next + 1, Role.Assistant, "", status = MessageStatus.Streaming, reading = Reading.Question),
+                    Message(next + 1, Role.Assistant, "", status = MessageStatus.Streaming, reading = true),
                 ),
             )
         }
@@ -251,72 +250,26 @@ class ChatViewModel(
 
         val asked = ChatRequest(question, start.history, start.summary)
         launchRequest { current ->
-            // Left null, the question is answered by the symptoms and diseases the server reads.
-            var symptoms: List<String>? = null
-            var diseases: List<String>? = null
-            var offTopic: Boolean? = null
-            try {
-                val kind = api.readKind(asked)
-                if (kind == QuestionKind.Case) {
-                    if (!current()) return@launchRequest
-                    updateAnswer { it.copy(reading = Reading.Case) }
-                    coroutineScope {
-                        // Without the diseases the symptoms are still reviewed, and the server reads the diseases itself.
-                        val named = async {
-                            try {
-                                api.readDiseases(asked)
-                            } catch (_: ApiException) {
-                                null
-                            }
-                        }
-                        symptoms = api.readSymptoms(asked)
-                        diseases = named.await()
-                    }
-                } else {
-                    symptoms = emptyList()
-                    if (kind == QuestionKind.OffTopic) offTopic = true
-                }
+            // Unsorted, the question is answered as a case is.
+            val kind = try {
+                api.readKind(asked)
             } catch (_: ApiException) {
-                // Without the symptoms to check, the question is still answered.
-                symptoms = null
-                diseases = null
+                null
             }
             if (!current()) return@launchRequest
-            if (!symptoms.isNullOrEmpty() || !diseases.isNullOrEmpty()) {
-                request = null
-                updateAnswer { it.copy(status = MessageStatus.Review, reading = null, symptoms = symptoms.orEmpty(), diseases = diseases) }
-                return@launchRequest
-            }
-            updateAnswer { it.copy(reading = null) }
-            answer(asked.copy(symptoms = symptoms, diseases = diseases, offTopic = offTopic), current)
+            updateAnswer { it.copy(reading = false) }
+            // A question that describes no patient has no symptoms to search the repertories by, and an
+            // off-topic one is not searched for at all.
+            val unread = kind != null && kind != QuestionKind.Case
+            answer(asked.copy(symptoms = if (unread) emptyList() else null, offTopic = if (kind == QuestionKind.OffTopic) true else null), current)
         }
-    }
-
-    /** Answer the question under review by these [symptoms] and, if they were reviewed, these [diseases]. */
-    fun confirm(symptoms: List<String>, diseases: List<String>? = null) {
-        val state = _state.value
-        val question = state.messages.getOrNull(state.messages.size - 2)
-        if (request != null || state.messages.lastOrNull()?.status != MessageStatus.Review || question?.role != Role.User) return
-        // Kept with the answer until it is complete, so a failed one is asked again by the same ones.
-        updateAnswer { it.copy(status = MessageStatus.Streaming, symptoms = symptoms, diseases = diseases) }
-        launchRequest { current -> answer(ChatRequest(question.content, state.history, state.summary, symptoms, diseases), current) }
     }
 
     /** Ask the failed question at the end of the chat again. */
     fun retry() {
-        val state = _state.value
-        val messages = state.messages
+        val messages = _state.value.messages
         val question = messages.getOrNull(messages.size - 2)
-        val failed = messages.lastOrNull()
-        if (request != null || failed?.status != MessageStatus.Error || question?.role != Role.User) return
-        val symptoms = failed.symptoms
-        if (symptoms != null) {
-            // The user already confirmed the case's symptoms and diseases; they are not read or reviewed again.
-            val diseases = failed.diseases
-            updateAnswer { Message(it.id, Role.Assistant, "", status = MessageStatus.Streaming, symptoms = symptoms, diseases = diseases) }
-            launchRequest { current -> answer(ChatRequest(question.content, state.history, state.summary, symptoms, diseases), current) }
-            return
-        }
+        if (request != null || messages.lastOrNull()?.status != MessageStatus.Error || question?.role != Role.User) return
         _state.update { it.copy(messages = messages.dropLast(2)) }
         submit(question.content)
     }
@@ -340,7 +293,6 @@ class ChatViewModel(
                 question.history,
                 question.summary,
                 question.symptoms,
-                question.diseases,
                 question.offTopic,
                 onSources = { sources -> if (current()) updateAnswer { it.copy(sources = sources) } },
                 onText = { piece -> if (current()) updateAnswer { it.copy(content = it.content + piece) } },
@@ -361,10 +313,9 @@ class ChatViewModel(
     /** Mark the streaming answer stopped, cancel its request and save what arrived. */
     fun stop() {
         val job = request
-        // A question whose case is under review has no request to cancel.
-        if (job == null && _state.value.messages.lastOrNull()?.status != MessageStatus.Review) return
+        if (job == null) return
         request = null
-        job?.cancel()
+        job.cancel()
         updateAnswer(settled = true) { Message(it.id, Role.Assistant, it.content, it.sources, MessageStatus.Stopped) }
         save()
     }
