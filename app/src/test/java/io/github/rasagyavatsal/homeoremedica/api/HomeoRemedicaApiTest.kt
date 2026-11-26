@@ -122,6 +122,19 @@ class HomeoRemedicaApiTest {
     }
 
     @Test
+    fun readsTheOldestBuildTheServerServes() = runTest {
+        server.enqueue(MockResponse().setHeader("Content-Type", "application/json").setBody("""{"auth":null,"minAndroidVersionCode":42}"""))
+        assertEquals(42L, api.minAndroidVersionCode())
+        assertEquals("/api/config", server.takeRequest().path)
+    }
+
+    @Test
+    fun servesEveryBuildForAServerThatDoesNotSay() = runTest {
+        server.enqueue(MockResponse().setHeader("Content-Type", "application/json").setBody("""{"auth":null}"""))
+        assertEquals(0L, api.minAndroidVersionCode())
+    }
+
+    @Test
     fun readsMultilineAndCrlfEvents() {
         val reader = ServerSentEventReader(Buffer().writeUtf8(": comment\r\n\r\nevent: text\r\ndata: one\r\ndata:two\r\n\r\ndata: last"))
         assertEquals(ServerSentEvent("text", "one\ntwo"), reader.next())

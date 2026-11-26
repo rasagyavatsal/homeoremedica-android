@@ -71,6 +71,12 @@ class HomeoRemedicaApi(
         }
     }
 
+    /** The oldest versionCode the server still serves; 0 when it serves every build. */
+    suspend fun minAndroidVersionCode(): Long {
+        val request = Request.Builder().url("$baseUrl/api/config").build()
+        return client.newCall(request).await { readResponse<ClientConfig>(it).minAndroidVersionCode }
+    }
+
     /** The signed-in user's chats, newest first. */
     suspend fun listChats(token: String): List<RemoteChatSummary> =
         account(token, "api/chats") { readResponse<ChatList>(it).chats }

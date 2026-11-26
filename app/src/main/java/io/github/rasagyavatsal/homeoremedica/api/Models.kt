@@ -11,6 +11,10 @@ enum class Role {
     @SerialName("assistant") Assistant,
 }
 
+/** `GET /api/config`: the oldest Android versionCode the server still serves; 0 serves every build. */
+@Serializable
+data class ClientConfig(val minAndroidVersionCode: Long = 0)
+
 @Serializable
 data class ChatTurn(val role: Role, val content: String)
 

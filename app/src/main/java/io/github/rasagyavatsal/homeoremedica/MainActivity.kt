@@ -13,6 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.toArgb
@@ -38,6 +39,7 @@ import io.github.rasagyavatsal.homeoremedica.ui.LegalPage
 import io.github.rasagyavatsal.homeoremedica.ui.LegalPageName
 import io.github.rasagyavatsal.homeoremedica.ui.LocalOpenLegal
 import io.github.rasagyavatsal.homeoremedica.ui.PractitionerNotice
+import io.github.rasagyavatsal.homeoremedica.ui.UpdateRequired
 import io.github.rasagyavatsal.homeoremedica.ui.theme.DarkPalette
 import io.github.rasagyavatsal.homeoremedica.ui.theme.HomeoRemedicaTheme
 import io.github.rasagyavatsal.homeoremedica.ui.theme.LightPalette
@@ -46,6 +48,7 @@ import io.github.rasagyavatsal.homeoremedica.ui.theme.ThemeChoice
 import io.github.rasagyavatsal.homeoremedica.ui.theme.ThemeControl
 import java.io.File
 import java.util.UUID
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val preferences by lazy { Preferences(getSharedPreferences("homeoremedica", MODE_PRIVATE)) }
@@ -54,6 +57,8 @@ class MainActivity : ComponentActivity() {
         val client = if (BuildConfig.E2E) HomeoRemedicaApi.e2eClient(UUID.randomUUID().toString()) else HomeoRemedicaApi.defaultClient()
         HomeoRemedicaApi(BuildConfig.API_BASE_URL, client)
     }
+
+    private val updater = AppUpdater(this)
 
     // The account view model tells it where chats are saved once it knows who is signed in.
     private val viewModel: ChatViewModel by viewModels {
@@ -108,6 +113,15 @@ class MainActivity : ComponentActivity() {
             var launching by rememberSaveable { mutableStateOf(true) }
             var covered by rememberSaveable { mutableStateOf(true) }
             val account by accounts.state.collectAsStateWithLifecycle()
+            // Asked once a launch; a build the server no longer serves is blocked until it is updated.
+            var updateRequired by rememberSaveable { mutableStateOf<Boolean?>(null) }
+            val scope = rememberCoroutineScope()
+            LaunchedEffect(Unit) {
+                if (updateRequired == null) {
+                    updateRequired = updater.required(api)
+                    if (updateRequired == true) updater.start(orListing = false)
+                }
+            }
             // A verification made from the link in the email shows when the app comes back.
             LifecycleResumeEffect(Unit) {
                 accounts.refresh()
@@ -137,13 +151,14 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         // The notice waits for the name to finish writing out.
-                        if (notice && !launching) {
+                        if (notice && !launching && updateRequired != true) {
                             PractitionerNotice {
                                 preferences.acknowledgeNotice()
                                 notice = false
                             }
                         }
                         legal?.let { page -> LegalPage(page, onOpen = { legal = it }, onClose = { legal = null }) }
+                        if (updateRequired == true && !launching) UpdateRequired { scope.launch { updater.start(orListing = true) } }
                         if (launching) LaunchScreen(onReveal = { covered = false }, onDone = { launching = false })
                     }
                 }

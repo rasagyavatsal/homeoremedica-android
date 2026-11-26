@@ -107,7 +107,7 @@ fun Dialog(
                         style = TextStyle(color = colors.text, fontFamily = Fonts.sans, fontSize = 22.sp, lineHeight = 28.sp),
                         modifier = Modifier.weight(1f).semantics { heading() },
                     )
-                    IconButton(Icons.Close, "Close", close, Modifier.padding(end = 0.dp), raised = true)
+                    if (dismissible) IconButton(Icons.Close, "Close", close, Modifier.padding(end = 0.dp), raised = true)
                 }
                 // The web app's `.dialog-description`.
                 if (description != null) {
