@@ -71,45 +71,6 @@ class HomeoRemedicaApiTest {
     }
 
     @Test
-    fun sendsTheSymptomsAndDiseasesTheUserConfirmed() = runTest {
-        server.enqueue(stream("done" to done))
-        api.sendMessage("A weepy child.", emptyList(), symptoms = listOf("Mind: weeping"), diseases = emptyList())
-        assertEquals(
-            """{"message":"A weepy child.","history":[],"symptoms":["Mind: weeping"],"diseases":[]}""",
-            server.takeRequest().body.readUtf8(),
-        )
-    }
-
-    @Test
-    fun sendsTheOffTopicFlag() = runTest {
-        server.enqueue(stream("done" to done))
-        api.sendMessage("What is the capital of France?", emptyList(), symptoms = emptyList(), offTopic = true)
-        assertEquals(
-            """{"message":"What is the capital of France?","history":[],"symptoms":[],"offTopic":true}""",
-            server.takeRequest().body.readUtf8(),
-        )
-    }
-
-    @Test
-    fun readsAnOffTopicQuestion() = runTest {
-        server.enqueue(MockResponse().setBody("""{"kind":"off-topic"}"""))
-        assertEquals(QuestionKind.OffTopic, api.readKind(ChatRequest("What is the capital of France?", emptyList())))
-    }
-
-    @Test
-    fun readsWhatAQuestionDescribesBeforeItIsAsked() = runTest {
-        val question = ChatRequest("A weepy child.", emptyList())
-        server.enqueue(MockResponse().setBody("""{"kind":"case"}"""))
-        server.enqueue(MockResponse().setBody("""{"symptoms":["Mind: weeping"]}"""))
-        server.enqueue(MockResponse().setBody("""{"diseases":["Measles"]}"""))
-
-        assertEquals(QuestionKind.Case, api.readKind(question))
-        assertEquals(listOf("Mind: weeping"), api.readSymptoms(question))
-        assertEquals(listOf("Measles"), api.readDiseases(question))
-        assertEquals(listOf("/api/kind", "/api/symptoms", "/api/diseases"), List(3) { server.takeRequest() }.map { it.path })
-    }
-
-    @Test
     fun acceptsAResponseThatDoesNotStream() = runTest {
         server.enqueue(MockResponse().setHeader("Content-Type", "application/json").setBody(done))
         assertEquals("Mild [1].", api.sendMessage("Pulsatilla?", emptyList()).answer)
@@ -158,6 +119,19 @@ class HomeoRemedicaApiTest {
     fun reportsAnUnreachableServer() = runTest {
         server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
         assertFailsWith(NETWORK_ERROR) { api.sendMessage("Pulsatilla?", emptyList()) }
+    }
+
+    @Test
+    fun readsTheOldestBuildTheServerServes() = runTest {
+        server.enqueue(MockResponse().setHeader("Content-Type", "application/json").setBody("""{"auth":null,"minAndroidVersionCode":42}"""))
+        assertEquals(42L, api.minAndroidVersionCode())
+        assertEquals("/api/config", server.takeRequest().path)
+    }
+
+    @Test
+    fun servesEveryBuildForAServerThatDoesNotSay() = runTest {
+        server.enqueue(MockResponse().setHeader("Content-Type", "application/json").setBody("""{"auth":null}"""))
+        assertEquals(0L, api.minAndroidVersionCode())
     }
 
     @Test

@@ -118,7 +118,6 @@ import io.github.rasagyavatsal.homeoremedica.chat.ChatViewModel
 import io.github.rasagyavatsal.homeoremedica.chat.MAX_QUESTION_CHARS
 import io.github.rasagyavatsal.homeoremedica.chat.Message
 import io.github.rasagyavatsal.homeoremedica.chat.MessageStatus
-import io.github.rasagyavatsal.homeoremedica.chat.Reading
 import io.github.rasagyavatsal.homeoremedica.ui.theme.Ease
 import io.github.rasagyavatsal.homeoremedica.ui.theme.EaseExit
 import io.github.rasagyavatsal.homeoremedica.ui.theme.Fonts
@@ -146,7 +145,6 @@ fun ChatScreen(viewModel: ChatViewModel, footer: (@Composable () -> Unit)? = nul
         onSubmit = viewModel::submit,
         onStop = viewModel::stop,
         onRetry = viewModel::retry,
-        onConfirm = viewModel::confirm,
         onNewChat = viewModel::newChat,
         onOpenChat = viewModel::openChat,
         onDeleteChat = viewModel::deleteChat,
@@ -170,8 +168,6 @@ fun ChatScreen(
     onDeleteChat: (String) -> Unit,
     onDismissNotice: () -> Unit,
     onUndoDelete: () -> Unit = {},
-    /** Answers the question whose case is under review by the symptoms and diseases given. */
-    onConfirm: (symptoms: List<String>, diseases: List<String>?) -> Unit = { _, _ -> },
     /** Rates an answer, or one of its sources by number. */
     onRate: (messageId: Long, source: Int?, rating: Rating?) -> Unit = { _, _, _ -> },
     onNote: (messageId: Long, reasons: List<FeedbackReason>?, comment: String?, onSaved: (Boolean) -> Unit) -> Unit = { _, _, _, _ -> },
@@ -208,9 +204,6 @@ fun ChatScreen(
     } else {
         null
     }
-    // The case under review, kept here rather than in the conversation's list: see [CaseDraft].
-    val reviewing = state.messages.lastOrNull()?.takeIf { it.role == Role.Assistant && it.status == MessageStatus.Review }
-    val case = reviewing?.let { rememberCaseDraft(it.id, it.symptoms.orEmpty(), it.diseases) }
     var sidebarOpen by rememberSaveable { mutableStateOf(false) }
     val closeSidebar = { sidebarOpen = false }
     val drawerShown = remember { Animatable(if (sidebarOpen) 1f else 0f) }
@@ -290,7 +283,7 @@ fun ChatScreen(
                             // Each new chat picks its greeting afresh.
                             key(state.id) { Welcome(composerSpace) }
                         } else {
-                            key(state.id) { Conversation(state, wide, composerSpace, open, showSource, case, onRetry, onConfirm, onRate, onNote) }
+                            key(state.id) { Conversation(state, wide, composerSpace, open, showSource, onRetry, onRate, onNote) }
                         }
                         ComposerArea(
                             state = state,
@@ -349,7 +342,6 @@ fun ChatScreen(
                 )
             }
         }
-        if (case != null && compact) CaseSheet(case, onConfirm)
         // The chat list slides in over the chat on phones, following a finger that drags it.
         if (drawer && (sidebarOpen || drawerShown.value > 0f)) {
             Box(
@@ -442,9 +434,7 @@ private fun Conversation(
     bottomPadding: Dp,
     openSource: OpenSource?,
     onSource: (messageId: Long, number: Int) -> Unit,
-    case: CaseDraft?,
     onRetry: () -> Unit,
-    onConfirm: (symptoms: List<String>, diseases: List<String>?) -> Unit,
     onRate: (messageId: Long, source: Int?, rating: Rating?) -> Unit,
     onNote: (messageId: Long, reasons: List<FeedbackReason>?, comment: String?, onSaved: (Boolean) -> Unit) -> Unit,
 ) {
@@ -479,8 +469,6 @@ private fun Conversation(
                         activeSource = openSource?.takeIf { it.messageId == message.id }?.number,
                         onSource = { number -> onSource(message.id, number) },
                         onRetry = onRetry.takeIf { index == state.messages.lastIndex },
-                        case = case.takeIf { index == state.messages.lastIndex },
-                        onConfirm = onConfirm.takeIf { index == state.messages.lastIndex },
                         modifier = itemModifier.rise(message.id),
                         ratings = state.ratings[message.id],
                         onRate = if (state.canRate) ({ rating -> onRate(message.id, null, rating) }) else null,
@@ -550,8 +538,6 @@ private fun Reply(
     activeSource: Int?,
     onSource: (Int) -> Unit,
     onRetry: (() -> Unit)?,
-    case: CaseDraft?,
-    onConfirm: ((symptoms: List<String>, diseases: List<String>?) -> Unit)?,
     modifier: Modifier,
     ratings: AnswerRatings?,
     /** Rates the answer; it cannot be rated without this. */
@@ -563,13 +549,12 @@ private fun Reply(
     val streaming = message.status == MessageStatus.Streaming
     when {
         message.status == MessageStatus.Error -> ReplyError(message.error.orEmpty(), onRetry, modifier)
-        message.status == MessageStatus.Review && case != null && onConfirm != null -> CaseReview(case, onConfirm, modifier)
         streaming && message.content.isEmpty() -> Progress(
+            // The books have nothing on a message that gets no sources; it gets a short reply.
             when {
-                message.sources != null -> "Reading the passages…"
-                message.reading == Reading.Question -> "Reading your question…"
-                message.reading == Reading.Case -> "Reading the case for symptoms and diseases…"
-                else -> "Searching the books…"
+                message.sources == null -> "Searching the books…"
+                message.sources.isNotEmpty() -> "Reading the passages…"
+                else -> "Writing a reply…"
             },
             modifier,
         )

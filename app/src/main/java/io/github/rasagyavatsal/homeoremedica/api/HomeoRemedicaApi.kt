@@ -49,36 +49,15 @@ class HomeoRemedicaApi(
 ) {
     private val baseUrl = baseUrl.trimEnd('/')
 
-    /** Whether [question] describes a patient, whose symptoms are then read, or asks about anything else. */
-    suspend fun readKind(question: ChatRequest): QuestionKind = beforeAsking<KindResponse>("kind", question).kind
-
-    /** The symptoms of the case [question] describes; none when it describes no patient. */
-    suspend fun readSymptoms(question: ChatRequest): List<String> = beforeAsking<SymptomsResponse>("symptoms", question).symptoms
-
-    /** The diseases the case [question] describes names; none when it names none. */
-    suspend fun readDiseases(question: ChatRequest): List<String> = beforeAsking<DiseasesResponse>("diseases", question).diseases
-
-    /** What the server makes of [question] before it is asked. */
-    private suspend inline fun <reified T> beforeAsking(path: String, question: ChatRequest): T {
-        val request = Request.Builder().url("$baseUrl/api/$path").post(ApiJson.encodeToString(question).toRequestBody(JSON)).build()
-        return client.newCall(request).await { readResponse<T>(it) }
-    }
-
-    /**
-     * Ask a question, reporting sources and answer text as the server streams them. A case is answered by
-     * the [symptoms] and [diseases] the user confirmed, or by the server's own when they are null.
-     */
+    /** Ask a question, reporting sources and answer text as the server streams them. */
     suspend fun sendMessage(
         message: String,
         history: List<ChatTurn>,
         summary: String? = null,
-        symptoms: List<String>? = null,
-        diseases: List<String>? = null,
-        offTopic: Boolean? = null,
         onSources: (List<Citation>) -> Unit = {},
         onText: (String) -> Unit = {},
     ): ChatResponse {
-        val body = ApiJson.encodeToString(ChatRequest(message, history, summary, symptoms, diseases, offTopic)).toRequestBody(JSON)
+        val body = ApiJson.encodeToString(ChatRequest(message, history, summary)).toRequestBody(JSON)
         val request = Request.Builder()
             .url("$baseUrl/api/chat")
             .header("Accept", "text/event-stream")
@@ -90,6 +69,12 @@ class HomeoRemedicaApi(
             if (!response.isSuccessful || !type.contains("text/event-stream")) readResponse<ChatResponse>(response)
             else readStream(ServerSentEventReader(response.body.source()), onSources, onText)
         }
+    }
+
+    /** The oldest versionCode the server still serves; 0 when it serves every build. */
+    suspend fun minAndroidVersionCode(): Long {
+        val request = Request.Builder().url("$baseUrl/api/config").build()
+        return client.newCall(request).await { readResponse<ClientConfig>(it).minAndroidVersionCode }
     }
 
     /** The signed-in user's chats, newest first. */

@@ -1,6 +1,3 @@
-What's new in 3.7
-- A new look: the name and a time-of-day greeting written out in serif, and a new italic H icon
-- Check the symptoms and diseases taken from a case before it's answered
-- References sit in one row and open their source passages
-- Delete chats from a long-press menu, with undo
-- Fixes for Google sign-in and citation links
+What's new in 3.9
+- Cases are answered straight away, without reviewing their symptoms first
+- The app asks you to update when your version is too old to get answers
