@@ -550,9 +550,11 @@ private fun Reply(
     when {
         message.status == MessageStatus.Error -> ReplyError(message.error.orEmpty(), onRetry, modifier)
         streaming && message.content.isEmpty() -> Progress(
+            // The books have nothing on a message that gets no sources; it gets a short reply.
             when {
-                message.sources != null -> "Reading the passages…"
-                else -> "Searching the books…"
+                message.sources == null -> "Searching the books…"
+                message.sources.isNotEmpty() -> "Reading the passages…"
+                else -> "Writing a reply…"
             },
             modifier,
         )
