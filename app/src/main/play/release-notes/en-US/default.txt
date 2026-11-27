@@ -1,2 +1,3 @@
-What's new in 3.8
-- Questions that aren't about homeopathy get a direct answer, without unrelated passages shown as sources
+What's new in 3.9
+- Cases are answered straight away, without reviewing their symptoms first
+- The app asks you to update when your version is too old to get answers
