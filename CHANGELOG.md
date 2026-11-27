@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.9.0](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.8.0...v3.9.0) (2026-11-27)
+
+
+### Features
+
+* allow up to 100 symptoms in case review ([ede70da](https://github.com/rasagyavatsal/homeoremedica-android/commit/ede70dafdd1c90f46c24c0750d3589e146a65f14))
+* answer a case without reviewing its symptoms and diseases ([ece439e](https://github.com/rasagyavatsal/homeoremedica-android/commit/ece439ede953dac5b47de332212054a0f21fba21))
+* ask questions without a symptoms list ([e3013aa](https://github.com/rasagyavatsal/homeoremedica-android/commit/e3013aae3ad2b3481625ec46de90317c14ba875e))
+* ask questions without reviewing or sorting them first ([65853f3](https://github.com/rasagyavatsal/homeoremedica-android/commit/65853f37b45b49d876f08bc38ffd383e15f808dd))
+* ask questions without sorting them first ([1211771](https://github.com/rasagyavatsal/homeoremedica-android/commit/12117712ce5b0c482fdfa1592dc3533dd202588f))
+* ask users to update when the server no longer serves their build ([9381c35](https://github.com/rasagyavatsal/homeoremedica-android/commit/9381c3584fe784933cb479cb75fed0202d9eaa5c)), closes [#32](https://github.com/rasagyavatsal/homeoremedica-android/issues/32)
+
+
+### Bug Fixes
+
+* say a reply is being written when there are no passages ([496d2b3](https://github.com/rasagyavatsal/homeoremedica-android/commit/496d2b3f72e0e477b0227fdbe293a9f14bbdd03f))
+
 ## [3.8.0](https://github.com/rasagyavatsal/homeoremedica-android/compare/v3.7.1...v3.8.0) (2026-11-23)
 
 
